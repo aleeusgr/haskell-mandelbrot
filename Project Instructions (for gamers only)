@@ -1,0 +1,118 @@
+WHAT THE PROJECT WILL DELIVER-------------------------------------------------------------------------------------------------
+
+The project deliverables shall be:
+-   A working Haskell program that performs the task approved by the supervisor. The program must follow our Coding Convention. 
+    Programming with side effects should be limited to where it is necessary, e.g., for input / output.
+-   Automated test cases for your program designed according to the testing guidelines covered in the course.
+-   Documentation of the program. See below for more information on how the documentation must be organised.
+-   Project diaries for each participant. In your project diary, you note every occasion where you worked on the project:
+    when, for how long and what you did.
+
+
+DOCUMENTATION------------------------------------------------------------------------------------------------------------------
+
+You must write documentation for your program. In addition to the standard specifications for each function and data type to be 
+included in the source code, you must write a separate document that describes how your program works and how to use it. 
+This document must include:
+
+ -  The project title, the names of all group members, and a statement of the fact that this is the project for this course this year.
+ -  A table of contents, an introduction, and summary of what the program does.
+ -  Use cases: a guide for how to actually use your program, including key examples.
+ -  Program documentation: a description of how your program really works, including at least:
+     -  Description of data structures. For abstract data types, you should also describe the interface.
+     -  Description of the algorithms your program uses.
+     -  Description of the various functions of the program. Describe algorithms and provide functional specifications for the 
+        main elements. Describe the control flow (i.e., how functions call each other).
+ -  Description of known shortcomings of the program. There may be things that work but not as well as you would like, 
+    or things that despite valiant attempts you have not succeeded in implementing properly.
+
+
+It should be sufficient to read the documentation to understand your program!
+
+Documentation is as important as the program itself. Poor documentation will affect your grade even if your program is working well. Start working on the documentation in good time! For example, work out the general structure of your document, e.g., section headings or table of contents, that will show how you intend to organise the documentation, and show this to your supervisor.
+
+Your documentation will be made available to other students for feedback (see Opposition below).
+
+
+SUBMISSION---------------------------------------------------------------------------------------------------------------------
+
+You must submit the project deliverables in writing no later than 18:00 on Monday, 4 March (week 10) and present the 
+project orally in one of the presentation slots scheduled for 8, 11, and 13 March. The detailed presentation schedule 
+will be made available once the project groups are finalized.
+
+The program, test cases, documentation and project diaries must be submitted via Studium. The documentation and project 
+diaries must be submitted as PDF files. Other formats, such as Microsoft Word (.doc) or OpenDocument (.odf) files, 
+will not be accepted.
+
+
+ORAL PRESENTATION------------------------------------------------------------------------------------------------------------
+
+The oral presentation must include:
+
+-  A description of what the program should do, and a demonstration of the program.
+-  An overview of how the program works.
+-  A description of any detail that you think is particularly interesting.
+-  A description of something that you had special difficulties with.
+
+After the presentation you will be asked questions about the project.
+
+The oral presentation will be 15 minutes, followed by time for questions. Each group member must participate in the 
+presentation and should take approximately the same time. It is a good idea to practice the presentation beforehand to 
+ensure that it will not be too long (or too short). Since many groups need to give their presentations, we will cut you 
+off if you take too long.
+
+You are strongly encouraged to make good use of visual aids (i.e., slides or the blackboard).
+
+
+OPPOSITION---------------------------------------------------------------------------------------------------------------
+
+You must act as an opponent at another group's presentation and provide constructive feedback on their report using 
+the feedback form available in the assignment area Project Report - Feedback.
+
+
+HOW TO WORK ON YOUR PROJECT---------------------------------------------------------------------------------------------------
+
+When you divide the work between your group, keep in mind that every group member should have a similar workload and 
+get to try different kinds of tasks (programming, test case design, documentation, ...), and that everyone should 
+understand what is being done. We will ask questions to each group member that can involve any part of the project.
+
+
+REPOSITORIES----------------------------------------------------------------------------------------------------------------
+
+Use a private GitHub repository to develop your code, and make it readable for your tutor. 
+Please see the lecture slides on version control for further details. Please make sure that your 
+repository is private - remember the rules on cheating, and do not share your project code with other student groups.
+
+
+GRADING----------------------------------------------------------------------------------------------------------------
+
+Grades are in relation to the above requirements regarding what the project will deliver and how it is presented.
+
+Grading criteria:
+
+-  A project that meets all of the above requirements especially well will receive a 5.
+-  A project that meets all the requirements above will receive a 4.
+-  A project that does not meet all of the above requirements, but that accomplishes something concrete that partially satisfies each requirement and that clearly shows that the project participants understand what they are doing, will receive a 3.
+
+A failed project can be redone next year. (In exceptional cases, we may allow a supplimentary project to be completed to 
+obtain a pass.)
+
+When grading, we will, within reasonable limits, take into account whether the project is particularly difficult or easy.
+
+Each participant's grade is determined not just by how well the project is implemented; 
+we also assess how well each participant contributed to the project. We do this with the help of the project diary, 
+the supervisor's knowledge of the project, and the presentation. The aim is for "free riders" not to slip through and 
+that people who take a heavier load than others are compensated. Thus, individual grades may differ from project grades.
+
+TUTORING----------------------------------------------------------------------------------------------------------------
+
+You are always welcome to speak with your supervisor (primarily) or Johannes (secondarily) for help.
+
+You will have two tutoring appointments (in weeks  7-8) with your supervisor. During tutoring sessions you 
+should give a brief description of how the project is progressing; then you should discuss how you want to proceed. 
+It is mandatory (except in cases of illness etc.) for all participants in the group to come to tutoring sessions. 
+Unexcused absence from a tutorial may impact your grade.
+
+By 18:00 on the day before each tutorial, you must submit your updated project diaries via Studium. 
+There you can also add any code and documentation that you wish to discuss during the tutorial, 
+so that the supervisor has a chance to look at it beforehand.
