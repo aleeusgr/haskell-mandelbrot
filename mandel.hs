@@ -71,7 +71,6 @@ createRGBA [] = []
 createRGBA (x:xs) = [0,0,0,(fromIntegral(x::Int)::Word8)] ++ createRGBA (xs)
 
 
-
 --------------------------------------------------------------------------------------------------------------------------------------
 
 picture = bitmapOfByteString 800 800 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (-400,400)))) True
