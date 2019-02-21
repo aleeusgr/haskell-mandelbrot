@@ -4,6 +4,8 @@ import Data.Word
 import Data.ByteString (ByteString, pack)
 --import Graphics.Rasterific.Texture
 
+type Word8Color = (Word8,Word8,Word8,Word8)
+
 
 {- mandel z c 
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
@@ -59,20 +61,45 @@ iterationList (x,y)
     | x == 399 = iterations : iterationList (-400, y-1)
   where iterations = pixelCheck (cordToComp ((fromIntegral x)::Float,(fromIntegral y)::Float) 200)
 
-{- createRGBA ls
-   DESCRIPTION: Takes a list of integers and converts them to shades of black (i.e. the Alpha of RGBA)
-   PRE: (x:xs) only contain positive integers ???????????????????????????????????????????????????????????????????????????????
-   RETURNS: A list of shades of black, where Alpha is the number of iterations passed through the Mandelbrot formula
-   EXAMPLES: createRGBA [1,50,244] -> [0,0,0,1,0,0,0,50,0,0,0,244]
-   VARIANT: length (x:xs)
+{- createRGBA (x:xs) ls
+   DESCRIPTION: 
+   PRE: 
+   RETURNS: 
+   EXAMPLES: 
+   VARIANT: 
 -}
-createRGBA :: [Int] -> [Word8]
-createRGBA [] = []
-createRGBA (x:xs) = [0,0,0,(fromIntegral(x::Int)::Word8)] ++ createRGBA (xs)
+createRGBA :: [Int] -> [Word8]-> [Word8]
+createRGBA [] _ = []
+createRGBA (x:xs) ls = (ls !! (x*4)):(ls !! (x*4+1)):(ls !! (x*4+2)):(ls !! (x*4+3)):(createRGBA xs ls)
+  
 
+{- twoCGradient c1 c2
+   DESCRIPTION: 
+   PRE: 
+   RETURNS: 
+   EXAMPLES: 
+   VARIANT: 
+-}
+twoCGradient :: Word8Color -> Word8Color -> [Word8]
+twoCGradient c1@(r1,g1,b1,a1) c2@(r2,g2,b2,a2)
+  | (r1,g1,b1) == (r2,g2,b2) = [r1,g1,b1,a1]
+  | otherwise = r1:g1:b1:255:(twoCGradient ((stepTo r1 r2), (stepTo g1 g2), (stepTo b1 b2), 255) c2)
+
+{- stepTo w1 w2
+   DESCRIPTION: 
+   PRE: 
+   RETURNS: 
+   EXAMPLES: 
+   VARIANT: 
+-}
+stepTo :: Word8 -> Word8 -> Word8
+stepTo x y
+  | x == y = x
+  | x < y = x + 1
+  | otherwise = x - 1
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture = bitmapOfByteString 800 800 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (-400,400)))) True
+picture = bitmapOfByteString 800 800 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (-400,400)) (twoCGradient (255,255,255,255) (0,0,0,255)))) True
 main = display (InWindow "Epic Gamer Window" (800, 800) (10, 10)) white picture
 
