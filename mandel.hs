@@ -13,7 +13,7 @@ type Word8Color = (Word8,Word8,Word8,Word8)
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
 -}
 mandel :: RealFloat a => Complex a -> Complex a -> Complex a
-mandel z c = (z*z) + c
+mandel z c = (z*z) + ((-1.75) :+ (0.01))
 
 {- pixelCheck z  
    DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to ?????????????????????????????????????
@@ -22,7 +22,7 @@ mandel z c = (z*z) + c
    EXAMPLES: pixelCheck (0.05 :+ 0.9) -> 5
 -}
 pixelCheck :: RealFloat a => Complex a -> Int
-pixelCheck z = pixelCheckAux mandel 0 101 z z
+pixelCheck z = pixelCheckAux mandel 0 55 z z
 
 {- pixelCheckAux f currIt maxIt z c
    DESCRIPTION: Calculates how many iterations of f it takes for z to ???????????????????????????????????????????????????????????
@@ -48,16 +48,10 @@ coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
 coordToComp (px,py) (cx,cy) (rx,ry) zm = 
   let
     aux p r c z = (p * 2) / (r * z) + c
+    rm = max rx ry
   in
-    (aux px rx cx zm) :+ (aux py ry cy zm)
+    (aux px rm cx zm) :+ (aux py rm cy zm)
 
-{- iterationList r c z
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
--}
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> [Int]
 iterationList r@(rx, ry) c z = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z
 
@@ -84,25 +78,9 @@ iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm
 createRGBA :: [Int] -> [Word8]-> [Word8]
 createRGBA [] _ = []
 createRGBA (x:xs) ls = (ls !! (x*4)):(ls !! (x*4+1)):(ls !! (x*4+2)):(ls !! (x*4+3)):(createRGBA xs ls)
+ 
 
-{- 
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
--}
-
-
-{- gradient cl s 
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
--}
 gradient :: [Word8Color] -> Word8 -> [Word8]
-gradient [] _ = []
 gradient [c1,c2] s = twoCGradient c1 c2 s
 gradient (c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
 
@@ -116,7 +94,7 @@ gradient (c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
 -}
 twoCGradient :: Word8Color -> Word8Color -> Word8 -> [Word8]
 twoCGradient c1@(r1,g1,b1,_) c2@(r2,g2,b2,_) s
-  | (r1,g1,b1) == (r2,g2,b2) = [] --[r1,g1,b1,255]
+  | (r1,g1,b1) == (r2,g2,b2) = []
   | otherwise = r1:g1:b1:255:(twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), 255) c2 s)
 
 {- stepTo w1 w2
@@ -128,12 +106,12 @@ twoCGradient c1@(r1,g1,b1,_) c2@(r2,g2,b2,_) s
 -}
 stepTo :: Word8 -> Word8 -> Word8 -> Word8
 stepTo x y s
-  | abs ((toInteger x) - (toInteger y)) <= (toInteger s) = y --x == y = x
+  | abs ((toInteger x) - (toInteger y)) <= (toInteger s) = y
   | x > y = x - s
   | otherwise = x + s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture = bitmapOfByteString 1000 1000 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (1000, 1000) (-0.75, 0.25) 8) (gradient [(255,0,0,255), (255,255,0,255), (0,255,0,255), (0,255,255,255), (0,0,255,255), (255,127,127,255)] 5))) True
-main = display (InWindow "Epic Insane Gamer Window" (1000, 1000) (10, 10)) white picture
+picture = bitmapOfByteString 800 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (800, 400) (0, 0) 8) (gradient [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255),(0,0,0,255)] 32))) True
+main = display (InWindow "Epic Gamer Window" (800, 400) (10, 10)) white picture
 
