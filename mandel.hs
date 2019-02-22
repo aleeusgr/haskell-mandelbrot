@@ -13,7 +13,7 @@ type Word8Color = (Word8,Word8,Word8,Word8)
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
 -}
 mandel :: RealFloat a => Complex a -> Complex a -> Complex a
-mandel z c = (z*z) + ((-1.75) :+ (0.01))
+mandel z c = (z*z) + c
 
 {- pixelCheck z  
    DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to ?????????????????????????????????????
@@ -21,8 +21,8 @@ mandel z c = (z*z) + ((-1.75) :+ (0.01))
    RETURNS: The number of iterations it takes for z to grow beyond the size of what is allowed in a Mandelbrot set
    EXAMPLES: pixelCheck (0.05 :+ 0.9) -> 5
 -}
-pixelCheck :: RealFloat a => Complex a -> Int
-pixelCheck z = pixelCheckAux mandel 0 55 z z
+pixelCheck :: RealFloat a => Complex a -> Int -> Int
+pixelCheck z it = pixelCheckAux mandel 0 it z z
 
 {- pixelCheckAux f currIt maxIt z c
    DESCRIPTION: Calculates how many iterations of f it takes for z to ???????????????????????????????????????????????????????????
@@ -52,8 +52,8 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
   in
     (aux px rm cx zm) :+ (aux py rm cy zm)
 
-iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> [Int]
-iterationList r@(rx, ry) c z = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z
+iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
+iterationList r@(rx, ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
 
 {- iterationListAux (px,py) (cx,cy) (rx,ry) zm
    DESCRIPTION: 
@@ -62,11 +62,11 @@ iterationList r@(rx, ry) c z = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (
    EXAMPLES: 
    VARIANT: 
 -}
-iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> [Int]
-iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm 
+iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
+iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it 
   | py < (-ry) `div` 2 = []
-  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm
-  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm)):(iterationListAux (px+1,py) c r zm)
+  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
+  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it):(iterationListAux (px+1,py) c r zm it)
 
 {- createRGBA (x:xs) ls
    DESCRIPTION: 
@@ -75,14 +75,20 @@ iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm
    EXAMPLES: 
    VARIANT: 
 -}
-createRGBA :: [Int] -> [Word8]-> [Word8]
-createRGBA [] _ = []
-createRGBA (x:xs) ls = (ls !! (x*4)):(ls !! (x*4+1)):(ls !! (x*4+2)):(ls !! (x*4+3)):(createRGBA xs ls)
+createRGBA :: [Int] -> Int -> [Word8] -> Word8Color -> [Word8]
+createRGBA [] _ _ _ = []
+createRGBA (x:xs) max_it ls c@(r,g,b,_)
+  | x == max_it = r:g:b:255:(createRGBA xs max_it ls c)
+  | otherwise = (ls !! (x*4)):(ls !! (x*4+1)):(ls !! (x*4+2)):(ls !! (x*4+3)):(createRGBA xs max_it ls c)
  
 
 gradient :: [Word8Color] -> Word8 -> [Word8]
 gradient [c1,c2] s = twoCGradient c1 c2 s
 gradient (c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
+
+
+gradientCycler :: [Word8Color] -> Word8 -> [Word8]
+gradientCycler l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
 
 
 {- twoCGradient c1 c2
@@ -112,6 +118,6 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture = bitmapOfByteString 800 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (800, 400) (0, 0) 8) (gradient [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255),(0,0,0,255)] 32))) True
-main = display (InWindow "Epic Gamer Window" (800, 400) (10, 10)) white picture
+picture it = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (-1.7495, 0) 256 it) it (gradientCycler [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 64) (0,0,0,255))) True
+main = display (InWindow "Epic Insane Gamer Window" (400, 400) (10, 10)) white $ picture 127 
 
