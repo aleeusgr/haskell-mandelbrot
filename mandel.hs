@@ -9,7 +9,6 @@ type Word8Color = (Word8,Word8,Word8,Word8)
 
 {- mandel z c 
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
-   PRE: TRUE
    RETURNS: A number in the Mandelbrot set, based on z and c
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
 -}
@@ -38,28 +37,35 @@ pixelCheckAux f currIt maxIt z c
   | magnitude(z) > 2 = currIt
   | otherwise = pixelCheckAux f (currIt+1) maxIt (f z c) c
 
-{- cordToComp (x,y) res
-   DESCRIPTION: Creates a complex number based on the coordinates (x,y), where x and y are specific pixels
-   PRE: res is positive ????????????????????????????????????????????????????????????????????
-   RETURNS: A comlex number representing coordinates
+{- coordToComp pix cam res zm
+   DESCRIPTION: Converts an on-screen pixel to a coordinate in the complex number plane.
+   PRE: ????????????????????????????????????????
+   RETURNS: The complex number located at position pix on a view of the complex number plane
+     with resolution res centered on the complex number cam with zoom factor zm. ??????????
    EXAMPLES: cordToComp (250,100) 400 -> 0.625 :+ 0.25
 -}
-cordToComp :: RealFloat a => (a, a) -> a -> Complex a
-cordToComp (x,y) res = ((x/res) :+ (y/res))
+coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
+coordToComp (px,py) (cx,cy) (rx,ry) zm = 
+  let
+    aux p r c z = (p * 2) / (r * z) + c
+  in
+    (aux px rx cx zm) :+ (aux py ry cy zm)
 
-{- iterationList (x,y)
+iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> [Int]
+iterationList r@(rx, ry) c z = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z
+
+{- iterationListAux (px,py) (cx,cy) (rx,ry) zm
    DESCRIPTION: 
-   PRE: x < 399, y > -401 ??????????????????????????????????????????
+   PRE: 
    RETURNS: 
    EXAMPLES: 
-   VARIANT: y ?????????????????????????????????????????????????
+   VARIANT: 
 -}
-iterationList :: (Int, Int) -> [Int]
-iterationList (399,-401) = []
-iterationList (x,y) 
-    | x < 399 = iterations : iterationList (x+1,y)
-    | x == 399 = iterations : iterationList (-400, y-1)
-  where iterations = pixelCheck (cordToComp ((fromIntegral x)::Float,(fromIntegral y)::Float) 200)
+iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> [Int]
+iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm 
+  | py < (-ry) `div` 2 = []
+  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm
+  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm)):(iterationListAux (px+1,py) c r zm)
 
 {- createRGBA (x:xs) ls
    DESCRIPTION: 
@@ -100,6 +106,6 @@ stepTo x y
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture = bitmapOfByteString 800 800 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (-400,400)) (twoCGradient (255,255,255,255) (0,0,0,255)))) True
-main = display (InWindow "Epic Gamer Window" (800, 800) (10, 10)) white picture
+picture = bitmapOfByteString 200 200 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (200, 200) (0, 0) 0.5) (twoCGradient (255,255,255,255) (0,0,0,255)))) True
+main = display (InWindow "Epic Gamer Window" (200, 200) (10, 10)) white picture
 
