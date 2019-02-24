@@ -2,7 +2,6 @@ import Data.Complex
 import Graphics.Gloss
 import Data.Word
 import Data.ByteString (ByteString, pack)
---import Graphics.Rasterific.Texture
 
 type Word8Color = (Word8,Word8,Word8,Word8)
 
@@ -53,62 +52,73 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
     (aux px rm cx zm) :+ (aux py rm cy zm)
 
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
-iterationList r@(rx, ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
+iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
 
 {- iterationListAux (px,py) (cx,cy) (rx,ry) zm
    DESCRIPTION: 
-   PRE: 
+   PRE: ?????????????????????????????????????????????????????????????????
    RETURNS: 
-   EXAMPLES: 
+   EXAMPLES: iterationListAux 
    VARIANT: 
 -}
 iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
 iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it 
   | py < (-ry) `div` 2 = []
   | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
-  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it):(iterationListAux (px+1,py) c r zm it)
+  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
 
 {- createRGBA (x:xs) ls
    DESCRIPTION: 
-   PRE: 
+   PRE: ?????????????????????????????????????????????????????????????????
    RETURNS: 
-   EXAMPLES: 
+   EXAMPLES: createRGBA 
    VARIANT: 
 -}
 createRGBA :: [Int] -> Int -> [Word8] -> Word8Color -> [Word8]
 createRGBA [] _ _ _ = []
 createRGBA (x:xs) max_it ls c@(r,g,b,_)
   | x == max_it = r:g:b:255:(createRGBA xs max_it ls c)
-  | otherwise = (ls !! (x*4)):(ls !! (x*4+1)):(ls !! (x*4+2)):(ls !! (x*4+3)):(createRGBA xs max_it ls c)
+  | otherwise = (ls !! (x*4)) : (ls !! (x*4+1)) : (ls !! (x*4+2)) : (ls !! (x*4+3)) : (createRGBA xs max_it ls c)
  
+{- cycleGrad l s
+   DESCRIPTION: Takes a gradient, connects the last color to the first, and cycles it infinitely
+   PRE: ?????????????????????????????????????????????????????????????????
+   RETURNS: An infinite list of a repeating color gradient 
+   EXAMPLES: cycleGrad 
+-}
+cycleGrad :: [Word8Color] -> Word8 -> [Word8]
+cycleGrad l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
 
+{- gradient c s
+   DESCRIPTION: Creates a complete gradient between multiple colors
+   PRE: ?????????????????????????????????????????????????????????????????
+   RETURNS: A color gradient 
+   EXAMPLES: gradient 
+   VARIANT: length c
+-}
 gradient :: [Word8Color] -> Word8 -> [Word8]
 gradient [c1,c2] s = twoCGradient c1 c2 s
-gradient (c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
+gradient c@(c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
 
-
-gradientCycler :: [Word8Color] -> Word8 -> [Word8]
-gradientCycler l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
-
-
-{- twoCGradient c1 c2
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
+{- twoCGradient c1 c2 s
+   DESCRIPTION: Creates a gradient between two colors
+   PRE: ?????????????????????????????????????????????????????????????????
+   RETURNS: A list of colors (rgba-format) as a spectrum from c1 to c2 with difference s of every r,g,b values between the different colors
+   EXAMPLES: twoCGradient 
+   VARIANT: ?????????????????????????????????????????????????????????????????
 -}
 twoCGradient :: Word8Color -> Word8Color -> Word8 -> [Word8]
 twoCGradient c1@(r1,g1,b1,_) c2@(r2,g2,b2,_) s
+  | [] _ _ = []
+  | _ [] _ = []
   | (r1,g1,b1) == (r2,g2,b2) = []
-  | otherwise = r1:g1:b1:255:(twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), 255) c2 s)
+  | otherwise = r1 : g1 : b1 : 255 : (twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), 255) c2 s)
 
-{- stepTo w1 w2
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
+{- stepTo x y s 
+   DESCRIPTION: Makes x approach y through adding a certain step-size s
+   PRE: ?????????????????????????????????????????????????????????????????
+   RETURNS: x + s if x < y, x - s if x > y
+   EXAMPLES: stepTo 1 6 2 -> 3
 -}
 stepTo :: Word8 -> Word8 -> Word8 -> Word8
 stepTo x y s
@@ -118,6 +128,5 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture it = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (-1.7495, 0) 256 it) it (gradientCycler [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 64) (0,0,0,255))) True
+picture it = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (-1.7495, 0) 256 it) it (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 64) (0,0,0,255))) True
 main = display (InWindow "Epic Insane Gamer Window" (400, 400) (10, 10)) white $ picture 127 
-
