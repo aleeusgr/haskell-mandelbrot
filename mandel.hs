@@ -51,6 +51,13 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
   in
     (aux px rm cx zm) :+ (aux py rm cy zm)
 
+{- iterationList res cent zoom max_it
+   DESCRIPTION: 
+   PRE: 
+   RETURNS: 
+   EXAMPLES: iterationList 
+   VARIANT: 
+-}
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
 iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
 
@@ -67,56 +74,65 @@ iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it
   | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
   | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
 
-{- createRGBA (x:xs) ls
-   DESCRIPTION: 
-   PRE: ?????????????????????????????????????????????????????????????????
-   RETURNS: 
-   EXAMPLES: createRGBA 
-   VARIANT: 
+{- createRGBA iter ls
+   DESCRIPTION: Converts a list of iterations to a graphical representation 
+   PRE: 0 <= x < length ls for all x that are elements of iter
+   RETURNS: ByteString of rgba-colors from ls matched to elements of iter.
+   EXAMPLES: createRGBA [1,3,2,1,2,3] 3 [80,90,100,255,150,150,150,255,43,67,21,255] (0,0,0,255) -> [150,150,150,255,0,0,0,255,43,67,21,255,150,150,150,255,43,67,21,255,0,0,0,255]
+   VARIANT: length iter
 -}
-createRGBA :: [Int] -> Int -> [Word8] -> Word8Color -> [Word8]
-createRGBA [] _ _ _ = []
-createRGBA (x:xs) max_it ls c@(r,g,b,_)
-  | x == max_it = r:g:b:255:(createRGBA xs max_it ls c)
-  | otherwise = (ls !! (x*4)) : (ls !! (x*4+1)) : (ls !! (x*4+2)) : (ls !! (x*4+3)) : (createRGBA xs max_it ls c)
- 
+createRGBA :: [Int] -> [Word8Color] -> [Word8]
+createRGBA [] _ = []
+createRGBA (x:xs) ls =
+  let
+    (r,g,b,a) = (ls !! x)
+  in
+    r : g : b : a : (createRGBA xs ls)
+
+{- cap xs x i
+   DESCRIPTION: Ends a list at a certain index with a specific element.
+   PRE: length xs >= i
+   RETURNS: The first i elements of xs, with x appended.
+   EXAMPLES: [7,5,6,4,5] 0 2 -> [7,5,2]
+ -}
+cap :: [a] -> a -> Int -> [a]
+cap xs x i = take i xs ++ [x]
+
+
 {- cycleGrad l s
    DESCRIPTION: Takes a gradient, connects the last color to the first, and cycles it infinitely
-   PRE: ?????????????????????????????????????????????????????????????????
+   PRE: length l >= 2 
    RETURNS: An infinite list of a repeating color gradient 
-   EXAMPLES: cycleGrad 
 -}
-cycleGrad :: [Word8Color] -> Word8 -> [Word8]
+cycleGrad :: [Word8Color] -> Word8 -> [Word8Color]
 cycleGrad l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
 
 {- gradient c s
    DESCRIPTION: Creates a complete gradient between multiple colors
-   PRE: ?????????????????????????????????????????????????????????????????
-   RETURNS: A color gradient 
-   EXAMPLES: gradient 
+   PRE: length c >= 2
+   RETURNS: A color gradient between all the colors of c
+   EXAMPLES: gradient [(0,0,0,255),(50,40,60,255),(90,100,110,255)] 10 -> [0,0,0,255,10,10,10,255,20,20,20,255,30,30,30,255,40,40,40,255,50,40,50,255,50,40,60,255,60,50,70,255,70,60,80,255,80,70,90,255,90,80,100,255,90,90,110,255]
    VARIANT: length c
 -}
-gradient :: [Word8Color] -> Word8 -> [Word8]
+gradient :: [Word8Color] -> Word8 -> [Word8Color]
 gradient [c1,c2] s = twoCGradient c1 c2 s
 gradient c@(c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
 
 {- twoCGradient c1 c2 s
    DESCRIPTION: Creates a gradient between two colors
-   PRE: ?????????????????????????????????????????????????????????????????
+   PRE: s > 0
    RETURNS: A list of colors (rgba-format) as a spectrum from c1 to c2 with difference s of every r,g,b values between the different colors
-   EXAMPLES: twoCGradient 
-   VARIANT: ?????????????????????????????????????????????????????????????????
+   EXAMPLES: twoCGradient (50,100,200,255) (60,80,100,255) 5 -> [50,100,200,255,55,95,195,255,60,90,190,255,60,85,185,255,60,80,180,255,60,80,175,255,60,80,170,255,60,80,165,255,60,80,160,255,60,80,155,255,60,80,150,255,60,80,145,255,60,80,140,255,60,80,135,255,60,80,130,255,60,80,125,255,60,80,120,255,60,80,115,255,60,80,110,255,60,80,105,255]
+   VARIANT: The greatest difference between the components of c1 and c2
 -}
-twoCGradient :: Word8Color -> Word8Color -> Word8 -> [Word8]
-twoCGradient c1@(r1,g1,b1,_) c2@(r2,g2,b2,_) s
-  | [] _ _ = []
-  | _ [] _ = []
-  | (r1,g1,b1) == (r2,g2,b2) = []
-  | otherwise = r1 : g1 : b1 : 255 : (twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), 255) c2 s)
+twoCGradient :: Word8Color -> Word8Color -> Word8 -> [Word8Color]
+twoCGradient c1@(r1,g1,b1,a1) c2@(r2,g2,b2,a2) s
+  | (r1,g1,b1,a1) == (r2,g2,b2,a1) = []
+  | otherwise = c1 : (twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), (stepTo a1 a2 s)) c2 s)
 
 {- stepTo x y s 
    DESCRIPTION: Makes x approach y through adding a certain step-size s
-   PRE: ?????????????????????????????????????????????????????????????????
+   PRE: s > 0
    RETURNS: x + s if x < y, x - s if x > y
    EXAMPLES: stepTo 1 6 2 -> 3
 -}
@@ -128,5 +144,5 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture it = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (-1.7495, 0) 256 it) it (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 64) (0,0,0,255))) True
-main = display (InWindow "Epic Insane Gamer Window" (400, 400) (10, 10)) white $ picture 127 
+picture it = bitmapOfByteString 600 600 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (600, 600) (0, 0) 0.5 it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+main = display (InWindow "Epic Insane Gamer Window" (600, 600) (20, 20)) white $ picture 127 
