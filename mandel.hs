@@ -145,12 +145,15 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture (it,zoom) = bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (0, 0) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
+picture (it,zoom,x,y) = bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (300, 300) (10, 10)
 
-handlekeys (EventKey (Char 's') Down _ _) (it, zoom) = (127, zoom*1.25)
+handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it, zoom,x'',y'') =
+  let x= realPart(coordToComp (x',y') (x'',y'') (300,300) zoom)
+      y= imagPart(coordToComp (x',y') (x'',y'') (300,300) zoom)
+    in(127, zoom*1.25,x,y)
 handlekeys _ current = current
 
-main = play window white 30 (127,0.5) (picture) (handlekeys) (const id)
+main = play window white 30 (127,0.5,0,0) (picture) (handlekeys) (const id)
