@@ -15,31 +15,31 @@ type Word8Color = (Word8,Word8,Word8,Word8)
 mandel :: RealFloat a => Complex a -> Complex a -> Complex a
 mandel z c = (z*z) + c
 
-{- pixelCheck z  
-   DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to ?????????????????????????????????????
-   PRE: TRUE
+{- iterationCheck z maxIt
+   DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to approach infinity
+   PRE: maxIt > 0
    RETURNS: The number of iterations it takes for z to grow beyond the size of what is allowed in a Mandelbrot set
-   EXAMPLES: pixelCheck (0.05 :+ 0.9) -> 5
+   EXAMPLES: iterationCheck (0.05 :+ 0.9) 255 -> 5
 -}
-pixelCheck :: RealFloat a => Complex a -> Int -> Int
-pixelCheck z it = pixelCheckAux mandel 0 it z z
+iterationCheck :: RealFloat a => Complex a -> Int -> Int
+iterationCheck z maxIt = iterationCheckAux mandel 0 maxIt z z
 
-{- pixelCheckAux f currIt maxIt z c
-   DESCRIPTION: Calculates how many iterations of f it takes for z to ???????????????????????????????????????????????????????????
-   PRE: TRUE
+{- iterationCheckAux f currIt maxIt z c
+   DESCRIPTION: Calculates how many iterations of f it takes for z to approach infinity
+   PRE: maxIt > 0, 
    RETURNS: currIt, i.e. the number of iterations passed
-   EXAMPLES: pixelCheckAux mandel 0 255 (0.05 :+ 0.9) (0.05 :+ 0) -> 255
-   VARIANT: ???????????????????????????????????????????????????????????
+   EXAMPLES: iterationCheckAux mandel 0 255 (0.05 :+ 0.9) (0.05 :+ 0) -> 255
+   VARIANT: maxIt - currIt
 -}
-pixelCheckAux :: RealFloat a => (Complex a -> Complex a -> Complex a) -> Int -> Int -> Complex a -> Complex a -> Int
-pixelCheckAux f currIt maxIt z c
+iterationCheckAux :: RealFloat a => (Complex a -> Complex a -> Complex a) -> Int -> Int -> Complex a -> Complex a -> Int
+iterationCheckAux f currIt maxIt z c
   | currIt >= maxIt = currIt
   | magnitude(z) > 2 = currIt
-  | otherwise = pixelCheckAux f (currIt+1) maxIt (f z c) c
+  | otherwise = iterationCheckAux f (currIt+1) maxIt (f z c) c
 
-{- coordToComp pix cent res zm
+{- coordToComp pix cent res@(rx,ry) zm
    DESCRIPTION: Converts an on-screen pixel to a coordinate in the complex number plane.
-   PRE: ????????????????????????????????????????
+   PRE: rx /= 0, ry /= 0, zm /= 0
    RETURNS: The complex number located at position pix on a view of the complex number plane
      with resolution res centered on the complex number cam with zoom factor zm. ??????????
    EXAMPLES: cordToComp (250,100) 400 -> 0.625 :+ 0.25
@@ -53,16 +53,15 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
     (aux px rm cx zm) :+ (-(aux py rm cy zm))
 
 {- iterationList res cent zoom max_it
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: iterationList 
-   VARIANT: 
+   DESCRIPTION: Applies the Mandelbrot formula to each pixel on a screen and gives the amount of iterations it takes for each pixel to begin approaching infinity.
+   PRE: max_it > 0
+   RETURNS: A list of each pixel represented by the number of iterations it takes to reach it
+   EXAMPLES: iterationList (10,10) (0,0) 0.5 255 -> [0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,2,2,2,1,1,1,1,0,2,2,3,5,17,3,1,1,1,0,2,6,6,255,255,8,2,1,1,255,255,255,255,255,255,6,2,1,1,0,2,6,6,255,255,8,2,1,1,0,2,2,3,5,17,3,1,1,1,0,1,1,2,2,2,1,1,1,1,0,0,1,1,1,1,1,1,1,0]
 -}
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
-iterationList r@(rx,ry) c z it = iterationListAux (0,0) c r z it
+iterationList res@(rx,ry) cent zoom max_it = iterationListAux (0,0) cent res zoom max_it
 
-{- iterationListAux (px,py) (cx,cy) (rx,ry) zm
+{- iterationListAux p cent res zoom
    DESCRIPTION: 
    PRE: 
    RETURNS: 
@@ -70,10 +69,10 @@ iterationList r@(rx,ry) c z it = iterationListAux (0,0) c r z it
    VARIANT: 
 -}
 iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
-iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it 
+iterationListAux p@(px,py) cent@(cx,cy) res@(rx,ry) zoom it 
   | py >= ry = []
-  | px >= rx = iterationListAux (0, py+1) c r zm it
-  | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
+  | px >= rx = iterationListAux (0, py+1) cent res zoom it
+  | otherwise = (iterationCheck (coordToComp (fromIntegral px, fromIntegral py) cent (fromIntegral rx,fromIntegral ry) zoom) it) : (iterationListAux (px+1,py) cent res zoom it)
 
 {- createRGBA iter ls
    DESCRIPTION: Converts a list of iterations to a graphical representation 
@@ -149,14 +148,14 @@ stepTo x y s
 --main = display (InWindow "Epic Insane Gamer Window" (600, 600) (20, 20)) white $ picture 127 
 
 
-picture (it,zoom,x,y) = bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
+picture (it,zoom,x,y) = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
 
 window :: Display
-window = InWindow "Epic Insane Gamer Window" (300, 300) (10, 10)
+window = InWindow "Epic Insane Gamer Window" (400, 400) (10, 10)
 
 handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it, zoom,x'',y'') =
-  let x= realPart(coordToComp (x',y') (x'',y'') (300,300) zoom)
-      y= imagPart(coordToComp (x',y') (x'',y'') (300,300) zoom)
+  let x= realPart(coordToComp (x',y') (x'',y'') (400,400) zoom)
+      y= imagPart(coordToComp (x',y') (x'',y'') (400,400) zoom)
     in(127, zoom*1.25,x,y)
 handlekeys _ current = current
 
