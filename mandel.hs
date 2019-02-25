@@ -1,6 +1,7 @@
 import Data.Complex
 import Graphics.Gloss
 import Data.Word
+import Graphics.Gloss.Interface.Pure.Game
 import Data.ByteString (ByteString, pack)
 
 type Word8Color = (Word8,Word8,Word8,Word8)
@@ -144,5 +145,12 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-picture it = bitmapOfByteString 600 600 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (600, 600) (0, 0) 0.5 it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
-main = display (InWindow "Epic Insane Gamer Window" (600, 600) (20, 20)) white $ picture 127 
+picture (it,zoom) = bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (0, 0) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
+
+window :: Display
+window = InWindow "Epic Insane Gamer Window" (300, 300) (10, 10)
+
+handlekeys (EventKey (Char 's') Down _ _) (it, zoom) = (127, zoom*1.25)
+handlekeys _ current = current
+
+main = play window white 30 (127,0.5) (picture) (handlekeys) (const id)
