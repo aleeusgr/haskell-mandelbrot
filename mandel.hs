@@ -37,7 +37,7 @@ pixelCheckAux f currIt maxIt z c
   | magnitude(z) > 2 = currIt
   | otherwise = pixelCheckAux f (currIt+1) maxIt (f z c) c
 
-{- coordToComp pix cam res zm
+{- coordToComp pix cent res zm
    DESCRIPTION: Converts an on-screen pixel to a coordinate in the complex number plane.
    PRE: ????????????????????????????????????????
    RETURNS: The complex number located at position pix on a view of the complex number plane
@@ -47,10 +47,10 @@ pixelCheckAux f currIt maxIt z c
 coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
 coordToComp (px,py) (cx,cy) (rx,ry) zm = 
   let
-    aux p r c z = (p * 2) / (r * z) + c
+    aux p r c z = ((p - (r / 2)) * 2) / (r * z) + c
     rm = max rx ry
   in
-    (aux px rm cx zm) :+ (aux py rm cy zm)
+    (aux px rm cx zm) :+ (-(aux py rm cy zm))
 
 {- iterationList res cent zoom max_it
    DESCRIPTION: 
@@ -60,26 +60,26 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
    VARIANT: 
 -}
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
-iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
+iterationList r@(rx,ry) c z it = iterationListAux (0,0) c r z it
 
 {- iterationListAux (px,py) (cx,cy) (rx,ry) zm
    DESCRIPTION: 
-   PRE: ?????????????????????????????????????????????????????????????????
+   PRE: 
    RETURNS: 
    EXAMPLES: iterationListAux 
    VARIANT: 
 -}
 iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
 iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it 
-  | py < (-ry) `div` 2 = []
-  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
+  | py >= ry = []
+  | px >= rx = iterationListAux (0, py+1) c r zm it
   | otherwise = (pixelCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
 
 {- createRGBA iter ls
    DESCRIPTION: Converts a list of iterations to a graphical representation 
    PRE: 0 <= x < length ls for all x that are elements of iter
    RETURNS: ByteString of rgba-colors from ls matched to elements of iter.
-   EXAMPLES: createRGBA [1,3,2,1,2,3] 3 [80,90,100,255,150,150,150,255,43,67,21,255] (0,0,0,255) -> [150,150,150,255,0,0,0,255,43,67,21,255,150,150,150,255,43,67,21,255,0,0,0,255]
+   EXAMPLES: createRGBA [1,0,2,2,1] [(255,0,0,255),(0,255,0,255),(0,0,255,255)] -> [0,255,0,255,255,0,0,255,0,0,255,255,0,0,255,255,0,255,0,255]
    VARIANT: length iter
 -}
 createRGBA :: [Int] -> [Word8Color] -> [Word8]
@@ -144,6 +144,10 @@ stepTo x y s
   | otherwise = x + s
 
 --------------------------------------------------------------------------------------------------------------------------------------
+
+--picture it = bitmapOfByteString 600 600 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (600, 600) (0,0) 0.5 it) (cap (cycleGrad [(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+--main = display (InWindow "Epic Insane Gamer Window" (600, 600) (20, 20)) white $ picture 127 
+
 
 picture (it,zoom,x,y) = bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
 
