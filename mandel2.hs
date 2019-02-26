@@ -166,6 +166,10 @@ handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it,x'',y'',zoom,c
   let x= realPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
       y= imagPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
     in(it, x,y,zoom*1.25,c,r)
+handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
+  let x= realPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
+      y= imagPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
+    in(it, x,y,zoom*0.75,c,r)
 handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r) =if(c > 1) then (it,x,y,z,c-1,r) else current
 handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r) = if(c < 3) then (it,x,y,z,c+1,r) else current
 handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r) = (it,x,y,z,c,r==False)
