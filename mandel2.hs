@@ -154,7 +154,11 @@ picture (it, xcord, ycord, zoom,c,r)
                   translate (-340) (150) $  Text $"X:"++ xcord,
                   translate (-340) (0) $  Text $"Y:"++ycord,
                   translate (-340) (-150) $ Text $"Z:"++zoom]
-                | otherwise = bitmapOfByteString 700 700 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (700, 700) (read (xcord), read(ycord)) read(zoom) it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+                | otherwise = let
+                                x = read(xcord)
+                                y = read(ycord)
+                                zoom = read(zoom)
+                              in bitmapOfByteString 700 700 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (700, 700) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
 
 
 
@@ -163,13 +167,19 @@ window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
 handlekeys :: Event -> Settings -> Settings
 handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
-  let x= realPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
-      y= imagPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
-    in(it, x,y,zoom*1.25,c,r)
+  let xcenter = read(x'')
+      ycenter = read(y'')
+      oldzoom = read(zoom)
+      x= realPart(coordToComp (x',y') (xcenter,ycenter) (700,700) oldzoom)
+      y= imagPart(coordToComp (x',y') (xcenter,ycenter) (700,700) oldzoom)
+    in(it, show(x),show(y),show(zoom*1.25),c,r)
 handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
-  let x= realPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
-      y= imagPart(coordToComp (x',y') (x'',y'') (700,700) zoom)
-    in(it, x,y,zoom*0.75,c,r)
+  let xcenter = read(x'')
+      ycenter = read(y'')
+      oldzoom = read(zoom)
+      x= realPart(coordToComp (x',y') (xcenter,ycenter) (700,700) oldzoom)
+      y= imagPart(coordToComp (x',y') (xcenter,ycenter) (700,700) oldzoom)
+    in(it, show(x),show(y),show(zoom*0.75),c,r)
 handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r) =if(c > 1) then (it,x,y,z,c-1,r) else current
 handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r) = if(c < 3) then (it,x,y,z,c+1,r) else current
 handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r) = (it,x,y,z,c,r==False)
