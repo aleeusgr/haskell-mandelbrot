@@ -165,7 +165,7 @@ picture (it, xcord, ycord, zoom,c,r)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
-                              in pictures[rectangleSolid 310 310,bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer iter) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
+                              in pictures[rectangleSolid 310 310,bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer iter) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
 
 
