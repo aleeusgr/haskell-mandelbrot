@@ -6,25 +6,56 @@ import Data.ByteString (ByteString, pack)
 import Data.Char
 import Test.HUnit
 
-type Word8Color = (Word8,Word8,Word8,Word8)
-type Settings = (String, String, String,String, Float, Bool, String, String)
+{-
 
+-}
+type Word8Color = (Word8,Word8,Word8,Word8)
+
+{-
+
+-}
+type Settings = (String, String, String,String, Float, Bool, String, String,String,String)
+
+---------------------------------------------------------------------------------------------------------------------------------------
 {- mandel z c 
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
    RETURNS: A number in the Mandelbrot set, based on z and c
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
 -}
-mandel :: RealFloat a => Complex a -> Complex a -> Complex a
-mandel z c = (z*z) + c
+mandelSet :: RealFloat a => Complex a -> Complex a -> Complex a
+mandelSet z c = (z*z) + c
 
-{- iterationCheck z maxIt
+{-
+
+-}
+burningShipSet :: RealFloat a => Complex a -> Complex a -> Complex a
+burningShipSet z c = (abs(realPart z) :+ abs(imagPart z))*(abs(realPart z) :+ abs(imagPart z)) + c
+
+{-
+
+-}
+tricornSet :: RealFloat a => Complex a -> Complex a -> Complex a
+tricornSet z c = (conjugate z) * (conjugate z) + c
+
+{-
+
+-}
+juliaSet :: RealFloat a => Complex a -> Complex a -> Complex a
+juliaSet z c = z*z + 0.279
+
+
+{- iterationCheck z maxIt fractalSet
    DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to approach infinity
    PRE: maxIt > 0
    RETURNS: The number of iterations it takes for z to grow beyond the size of what is allowed in a Mandelbrot set
    EXAMPLES: iterationCheck (0.05 :+ 0.9) 255 -> 5
 -}
-iterationCheck :: RealFloat a => Complex a -> Int -> Int
-iterationCheck z maxIt = iterationCheckAux mandel 0 maxIt z z
+iterationCheck :: RealFloat a => Complex a -> Int -> String -> Int
+iterationCheck z maxIt fractalSet
+  | fractalSet == "burningShipSet" = iterationCheckAux burningShipSet 0 maxIt z z
+  | fractalSet == "tricornSet" = iterationCheckAux tricornSet 0 maxIt z z
+  | fractalSet == "juliaSet" = iterationCheckAux juliaSet 0 maxIt z z
+  | otherwise = iterationCheckAux mandelSet 0 maxIt z z
 
 {- iterationCheckAux f currIt maxIt z c
    DESCRIPTION: Calculates how many iterations of f it takes for z to approach infinity
@@ -49,7 +80,6 @@ iterationCheckAux f currIt maxIt z c
 coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
 coordToComp (px,py) (cx,cy) (rx,ry) zm = 
   let
---    aux p r c z = ((p - (r / 2)) * 2) / (r * z) + c
     aux p r c z = (p * 2) / (r * z) + c
     rm = max rx ry
   in
@@ -61,8 +91,8 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
    RETURNS: 
    EXAMPLES: 
 -}
-iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
-iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
+iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> String -> [Int]
+iterationList r@(rx,ry) c z it f = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it f
 
 {- iterationListAux 
    DESCRIPTION:  
@@ -71,15 +101,15 @@ iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 +
    EXAMPLES: 
    VARIANT: 
 -}
-iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
-iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it
+iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> String -> [Int]
+iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f
   | py < (-ry) `div` 2 = []
-  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
+  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it f 
   | otherwise =
       let
         toRF x = fromIntegral x
       in
-        (iterationCheck (coordToComp (toRF px, toRF py) c (toRF rx,toRF ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
+        (iterationCheck (coordToComp (toRF px, toRF py) c (toRF rx,toRF ry) zm) it f) : (iterationListAux (px+1,py) c r zm it f)
 
 
 {- createRGBA iter ls
@@ -155,13 +185,13 @@ stepTo x y s
 --main = display (InWindow "Epic Insane Gamer Window" (1000, 1000) (30, 30)) white $ picture 127 
 
 
---------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 {-xres :: String
 xres = "300"
-
 yres :: String
 yres = "300"
 -}
+
 
 picture :: Settings -> Picture
 picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
@@ -180,7 +210,7 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
-                              in pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
+                              in pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
@@ -213,8 +243,8 @@ handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r,xres,yres,exp,set)
   | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r,xres,yres,exp,set)
   | c == 4 && k == '\b' = if(length(xres) < 1) then current else(it,x,y,z,c,r,init(xres),yres,exp,set)
   | c == 5 && k == '\b' = if(length(yres) < 1) then current else(it,x,y,z,c,r,xres,init(yres),exp,set)
-  | c == 6 && k == '\b' = if(length(exp) < 1) then current else(it,x,y,z,c,r,xres,yres,exp,init(set))
-  | c == 7 && k == '\b' = if(length(set) < 1) then current else(it,x,y,z,c,r,xres,yres,init(exp),set)
+  | c == 6 && k == '\b' = if(length(set) < 1) then current else(it,x,y,z,c,r,xres,yres,exp,init(set))
+  | c == 7 && k == '\b' = if(length(exp) < 1) then current else(it,x,y,z,c,r,xres,yres,init(exp),set)
   | c == 6 =(it,x,y,z,c,r,xres,yres,exp,set++[k])
   | isDigit k == False && k /= '.' && k /= '-' = current
   | c == 0 = (it++[k],x,y,z,c,r,xres,yres,exp,set)
@@ -229,11 +259,11 @@ handlekeys _ current = current
 main :: IO()
 main = play window white 1 ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset") (picture) (handlekeys) (const id)
 
---------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-test1 = TestCase $ assertEqual "mandel (-1.75 + 0.05i)" (1.31 :+ (-0.125)) (mandel ((-1.75) :+ 0.05) ((-1.75) :+ 0.05))
-test2 = TestCase $ assertEqual "iterationCheck 0 127" 127 (iterationCheck 0 127)
-test3 = TestCase $ assertEqual "iterationCheck ((-0.56) :+ 0.893333) 51" 3 (iterationCheck ((-0.56) :+ 0.893333) 51)
+test1 = TestCase $ assertEqual "mandel (-1.75 + 0.05i)" (1.31 :+ (-0.125)) (mandelSet ((-1.75) :+ 0.05) ((-1.75) :+ 0.05))
+test2 = TestCase $ assertEqual "iterationCheck 0 127" 127 (iterationCheck 0 127 "mandelSet")
+test3 = TestCase $ assertEqual "iterationCheck ((-0.56) :+ 0.893333) 51" 3 (iterationCheck ((-0.56) :+ 0.893333) 51 "mandelSet")
 test4 = TestCase $ assertEqual "coordToComp (20,20) (0,0) (50,50) 0.5" (1.6 :+ 1.6) (coordToComp (20,20) (0,0) (50,50) 0.5)
 test5 = TestCase $ assertEqual "cap [1,2..5] 6 3" [1,2,3,6] (cap [1,2,3,4,5] 6 3)
 test6 = TestCase $ assertEqual "cap [1,2,3] 6 0" [6] (cap [1,2,3] 6 0)
