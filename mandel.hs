@@ -4,6 +4,7 @@ import Data.Word
 import Graphics.Gloss.Interface.Pure.Game
 import Data.ByteString (ByteString, pack)
 import Data.Char
+import Test.HUnit
 
 type Word8Color = (Word8,Word8,Word8,Word8)
 type Settings = (String, String, String,String, Float, Bool)
@@ -43,7 +44,7 @@ iterationCheckAux f currIt maxIt z c
    PRE: rx /= 0, ry /= 0, zm /= 0
    RETURNS: The complex number located at position pix on a view of the complex number plane
      with resolution res centered on the complex number cam with zoom factor zm. ??????????
-   EXAMPLES: cordToComp (250,100) 400 -> 0.625 :+ 0.25
+   EXAMPLES: coordToComp (20,20) (0,0) (50,50) 0.5 -> 1.6 :+ 1.6
 -}
 coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
 coordToComp (px,py) (cx,cy) (rx,ry) zm = 
@@ -74,7 +75,11 @@ iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> In
 iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it
   | py < (-ry) `div` 2 = []
   | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
-  | otherwise = (iterationCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
+  | otherwise =
+      let
+        toRF x = fromIntegral x
+      in
+        (iterationCheck (coordToComp (toRF px, toRF py) c (toRF rx,toRF ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
 
 
 {- createRGBA iter ls
@@ -167,8 +172,6 @@ picture (it, xcord, ycord, zoom,c,r)
                                 iter = read(it)
                               in pictures[rectangleSolid 310 310,bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer iter) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
-
-
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
@@ -207,3 +210,21 @@ handlekeys _ current = current
 
 main :: IO()
 main = play window white 1 ("255","0","0", "0.5", 0, False) (picture) (handlekeys) (const id)
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+test1 = TestCase $ assertEqual "mandel (-1.75 + 0.05i)" (1.31 :+ (-0.125)) (mandel ((-1.75) :+ 0.05) ((-1.75) :+ 0.05))
+test2 = TestCase $ assertEqual "iterationCheck 0 127" 127 (iterationCheck 0 127)
+test3 = TestCase $ assertEqual "iterationCheck ((-0.56) :+ 0.893333) 51" 3 (iterationCheck ((-0.56) :+ 0.893333) 51)
+test4 = TestCase $ assertEqual "coordToComp (20,20) (0,0) (50,50) 0.5" (1.6 :+ 1.6) (coordToComp (20,20) (0,0) (50,50) 0.5)
+test5 = TestCase $ assertEqual "cap [1,2..5] 6 3" [1,2,3,6] (cap [1,2,3,4,5] 6 3)
+test6 = TestCase $ assertEqual "cap [1,2,3] 6 0" [6] (cap [1,2,3] 6 0)
+test7 = TestCase $ assertEqual "stepTo 1 7 3" 4 (stepTo 1 7 3)
+test8 = TestCase $ assertEqual "stepTo 7 2 4" 3 (stepTo 7 2 4)
+test9 = TestCase $ assertEqual "stepTo 1 2 30" 2 (stepTo 1 2 30)
+test10 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (0,1,2,255) 1" [(0,0,0,255), (0,1,1,255)] (twoCGradient (0,0,0,255) (0,1,2,255) 1)
+test11 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (0,1,2,255) 2" [(0,0,0,255), (2,2,2,255), (4,4,4,255)] (twoCGradient (0,0,0,255) (6,6,6,255) 2)
+test12 = TestCase $ assertEqual "gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2" [(0,0,0,255),(1,2,2,255),(1,2,3,255),(3,4,4,255),(5,5,4,255)] (gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2)
+
+
+runTests = runTestTT $ TestList [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12]
