@@ -3,9 +3,10 @@ import Graphics.Gloss
 import Data.Word
 import Graphics.Gloss.Interface.Pure.Game
 import Data.ByteString (ByteString, pack)
+import Data.Char
 
 type Word8Color = (Word8,Word8,Word8,Word8)
-
+type Settings = (Int, String, String,String, Float, Bool)
 
 {- mandel z c 
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
@@ -47,32 +48,34 @@ iterationCheckAux f currIt maxIt z c
 coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
 coordToComp (px,py) (cx,cy) (rx,ry) zm = 
   let
-    aux p r c z = ((p - (r / 2)) * 2) / (r * z) + c
+--    aux p r c z = ((p - (r / 2)) * 2) / (r * z) + c
+    aux p r c z = (p * 2) / (r * z) + c
     rm = max rx ry
   in
-    (aux px rm cx zm) :+ (-(aux py rm cy zm))
+    (aux px rm cx zm) :+ ((aux py rm cy zm))
 
 {- iterationList res cent zoom max_it
-   DESCRIPTION: Applies the Mandelbrot formula to each pixel on a screen and gives the amount of iterations it takes for each pixel to begin approaching infinity.
-   PRE: max_it > 0
-   RETURNS: A list of each pixel represented by the number of iterations it takes to reach it
-   EXAMPLES: iterationList (10,10) (0,0) 0.5 255 -> [0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,2,2,2,1,1,1,1,0,2,2,3,5,17,3,1,1,1,0,2,6,6,255,255,8,2,1,1,255,255,255,255,255,255,6,2,1,1,0,2,6,6,255,255,8,2,1,1,0,2,2,3,5,17,3,1,1,1,0,1,1,2,2,2,1,1,1,1,0,0,1,1,1,1,1,1,1,0]
--}
-iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
-iterationList res@(rx,ry) cent zoom max_it = iterationListAux (0,0) cent res zoom max_it
-
-{- iterationListAux p cent res zoom
    DESCRIPTION: 
    PRE: 
    RETURNS: 
-   EXAMPLES: iterationListAux 
+   EXAMPLES: 
+-}
+iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> [Int]
+iterationList r@(rx,ry) c z it = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it
+
+{- iterationListAux 
+   DESCRIPTION:  
+   PRE: 
+   RETURNS: 
+   EXAMPLES: 
    VARIANT: 
 -}
 iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> [Int]
-iterationListAux p@(px,py) cent@(cx,cy) res@(rx,ry) zoom it 
-  | py >= ry = []
-  | px >= rx = iterationListAux (0, py+1) cent res zoom it
-  | otherwise = (iterationCheck (coordToComp (fromIntegral px, fromIntegral py) cent (fromIntegral rx,fromIntegral ry) zoom) it) : (iterationListAux (px+1,py) cent res zoom it)
+iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it
+  | py < (-ry) `div` 2 = []
+  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it
+  | otherwise = (iterationCheck (coordToComp (fromIntegral px, fromIntegral py) c (fromIntegral rx,fromIntegral ry) zm) it) : (iterationListAux (px+1,py) c r zm it)
+
 
 {- createRGBA iter ls
    DESCRIPTION: Converts a list of iterations to a graphical representation 
@@ -97,7 +100,6 @@ createRGBA (x:xs) ls =
  -}
 cap :: [a] -> a -> Int -> [a]
 cap xs x i = take i xs ++ [x]
-
 
 {- cycleGrad l s
    DESCRIPTION: Takes a gradient, connects the last color to the first, and cycles it infinitely
@@ -144,19 +146,64 @@ stepTo x y s
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
---picture it = bitmapOfByteString 600 600 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (600, 600) (0,0) 0.5 it) (cap (cycleGrad [(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
---main = display (InWindow "Epic Insane Gamer Window" (600, 600) (20, 20)) white $ picture 127 
+--picture it = bitmapOfByteString 1000 1000 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (1000, 1000) (-0.7,-0.3) 20 it) (cap (cycleGrad [(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+--main = display (InWindow "Epic Insane Gamer Window" (1000, 1000) (30, 30)) white $ picture 127 
 
 
-picture (it,zoom,x,y) = bitmapOfByteString 400 400 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (400, 400) (x, y) zoom it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True 
+--------------------------------------------------------------------------------------------------------------------------------------
+
+picture :: Settings -> Picture
+picture (it, xcord, ycord, zoom,c,r)
+                | r == False = pictures
+                  [translate (0) (350-(150*c))$ Color yellow (rectangleSolid 700 120),
+                  translate (-340) (150) $  Text $"X:"++ xcord,
+                  translate (-340) (0) $  Text $"Y:"++ycord,
+                  translate (-340) (-150) $ Text $"Z:"++zoom]
+                | otherwise = let
+                                x = read(xcord)
+                                y = read(ycord)
+                                zoomer = read(zoom)
+                              in bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+
+
 
 window :: Display
-window = InWindow "Epic Insane Gamer Window" (400, 400) (10, 10)
+window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
-handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it, zoom,x'',y'') =
-  let x= realPart(coordToComp (x',y') (x'',y'') (400,400) zoom)
-      y= imagPart(coordToComp (x',y') (x'',y'') (400,400) zoom)
-    in(127, zoom*1.25,x,y)
+handlekeys :: Event -> Settings -> Settings
+handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
+  let xcenter = read(x'')
+      ycenter = read(y'')
+      oldzoom = read(zoom)
+      newzoom = show(read(zoom)*1.5)
+      x= show(realPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
+      y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
+    in(it, x, y, newzoom, c, r)
+handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
+  let xcenter = read(x'')
+      ycenter = read(y'')
+      oldzoom = read(zoom)
+      newzoom = show(read(zoom)*0.5)
+      x= show(realPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
+      y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
+    in(it, x, y, newzoom, c, r)
+handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r) =if(c > 1) then (it,x,y,z,c-1,r) else current
+handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r) = if(c < 3) then (it,x,y,z,c+1,r) else current
+handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r) = (it,x,y,z,c,r==False)
+handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r)
+  | r == True = current
+  | c == 1 && k == '\b' = if(length(x) < 1) then current else (it,init(x),y,z,c,r)
+  | c == 2 && k == '\b' = if(length(y) < 1) then current else(it,x,init(y),z,c,r)
+  | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r)
+  | isDigit k == False && k /= '.' && k /= '-' = current
+  | c == 1 = (it,x++[k],y,z,c,r)
+  | c == 2 = (it,x,y++[k],z,c,r)
+  | c == 3 = (it,x,y,z++[k],c,r)
 handlekeys _ current = current
 
-main = play window white 30 (127,0.5,0,0) (picture) (handlekeys) (const id)
+main :: IO()
+main = play window white 1 (255,"0","0", "0.5", 1, False) (picture) (handlekeys) (const id)
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
+--Test Cases
