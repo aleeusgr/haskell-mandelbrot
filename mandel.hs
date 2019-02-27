@@ -164,15 +164,17 @@ yres = "300"
 -}
 
 picture :: Settings -> Picture
-picture (it, xcord, ycord, zoom,c,r,xres,yres)
+picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                 | r == False = pictures
-                  [translate (0) (230-(75*c))$ Color yellow (rectangleSolid 700 80),
-                  translate (-340) (200) $  Scale 0.5 0.5 (Text $ "It:"++ it),
-                  translate (-340) (125) $  Scale 0.5 0.5 (Text $ "X:"++ xcord),
-                  translate (-340) (50) $  Scale 0.5 0.5 (Text $ "Y:"++ycord),
-                  translate (-340) (-25) $ Scale 0.5 0.5 (Text $ "Zoom:"++zoom),
-                  translate (-340) (-100) $ Scale 0.5 0.5 (Text $ "Xres:"++xres),
-                  translate (-340) (-175) $ Scale 0.5 0.5 (Text $ "Yres:"++yres)]
+                  [translate (0) (280-(75*c))$ Color yellow (rectangleSolid 700 80),
+                  translate (-340) (250) $  Scale 0.5 0.5 (Text $ "It:"++ it),
+                  translate (-340) (175) $  Scale 0.5 0.5 (Text $ "X:"++ xcord),
+                  translate (-340) (100) $  Scale 0.5 0.5 (Text $ "Y:"++ycord),
+                  translate (-340) (25) $ Scale 0.5 0.5 (Text $ "Zoom:"++zoom),
+                  translate (-340) (-50) $ Scale 0.5 0.5 (Text $ "Xres:"++xres),
+                  translate (-340) (-125) $ Scale 0.5 0.5 (Text $ "Yres:"++yres),
+                  translate (-340) (-200) $ Scale 0.5 0.5 (Text $ "Set:"++set),
+                  translate (-340) (-275) $ Scale 0.5 0.5 (Text $ "Exp:"++exp)]
                 | otherwise = let
                                 x = read(xcord)
                                 y = read(ycord)
@@ -184,44 +186,48 @@ window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
 handlekeys :: Event -> Settings -> Settings
-handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres) =
+handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
   let xcenter = read(x'')
       ycenter = read(y'')
       oldzoom = read(zoom)
       newzoom = show(read(zoom)*1.5)
       x= show(realPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
       y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-    in if(r) then (it, x, y, newzoom, c, r,xres,yres) else current
-handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres) =
+    in if(r) then (it, x, y, newzoom, c, r,xres,yres,exp,set) else current
+handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
   let xcenter = read(x'')
       ycenter = read(y'')
       oldzoom = read(zoom)
       newzoom = show(read(zoom)*0.5)
       x= show(realPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
       y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-    in if(r) then (it, x, y, newzoom, c, r,xres,yres) else current
-handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres) else current
-handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres) = if(c < 5) then (it,x,y,z,c+1,r,xres,yres) else current
-handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres) = (it,x,y,z,c,r==False,xres,yres)
-handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r,xres,yres)
+    in if(r) then (it, x, y, newzoom, c, r,xres,yres,exp,set) else current
+handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres,exp,set) else current
+handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) = if(c < 7) then (it,x,y,z,c+1,r,xres,yres,exp,set) else current
+handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres,exp,set) = (it,x,y,z,c,r==False,xres,yres,exp,set)
+handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r,xres,yres,exp,set)
   | r == True = current
-  | c == 0 && k == '\b' = if(length(x) < 1) then current else (init(it),x,y,z,c,r,xres,yres)
-  | c == 1 && k == '\b' = if(length(x) < 1) then current else (it,init(x),y,z,c,r,xres,yres)
-  | c == 2 && k == '\b' = if(length(y) < 1) then current else(it,x,init(y),z,c,r,xres,yres)
-  | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r,xres,yres)
-  | c == 4 && k == '\b' = if(length(y) < 1) then current else(it,x,y,z,c,r,init(xres),yres)
-  | c == 5 && k == '\b' = if(length(z) < 1) then current else(it,x,y,z,c,r,xres,init(yres))
+  | c == 0 && k == '\b' = if(length(it) < 1) then current else (init(it),x,y,z,c,r,xres,yres,exp,set)
+  | c == 1 && k == '\b' = if(length(x) < 1) then current else (it,init(x),y,z,c,r,xres,yres,exp,set)
+  | c == 2 && k == '\b' = if(length(y) < 1) then current else(it,x,init(y),z,c,r,xres,yres,exp,set)
+  | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r,xres,yres,exp,set)
+  | c == 4 && k == '\b' = if(length(xres) < 1) then current else(it,x,y,z,c,r,init(xres),yres,exp,set)
+  | c == 5 && k == '\b' = if(length(yres) < 1) then current else(it,x,y,z,c,r,xres,init(yres),exp,set)
+  | c == 6 && k == '\b' = if(length(exp) < 1) then current else(it,x,y,z,c,r,xres,yres,exp,init(set))
+  | c == 7 && k == '\b' = if(length(set) < 1) then current else(it,x,y,z,c,r,xres,yres,init(exp),set)
+  | c == 6 =(it,x,y,z,c,r,xres,yres,exp,set++[k])
   | isDigit k == False && k /= '.' && k /= '-' = current
-  | c == 0 = (it++[k],x,y,z,c,r,xres,yres)
-  | c == 1 = (it,x++[k],y,z,c,r,xres,yres)
-  | c == 2 = (it,x,y++[k],z,c,r,xres,yres)
-  | c == 3 = (it,x,y,z++[k],c,r,xres,yres)
-  | c == 4 = (it,x,y,z,c,r,xres++[k],yres)
-  | c == 5 = (it,x,y,z,c,r,xres,yres++[k])
+  | c == 0 = (it++[k],x,y,z,c,r,xres,yres,exp,set)
+  | c == 1 = (it,x++[k],y,z,c,r,xres,yres,exp,set)
+  | c == 2 = (it,x,y++[k],z,c,r,xres,yres,exp,set)
+  | c == 3 = (it,x,y,z++[k],c,r,xres,yres,exp,set)
+  | c == 4 = (it,x,y,z,c,r,xres++[k],yres,exp,set)
+  | c == 5 = (it,x,y,z,c,r,xres,yres++[k],exp,set)
+  | c == 7 = (it,x,y,z,c,r,xres,yres,exp++[k],set)
 handlekeys _ current = current
 
 main :: IO()
-main = play window white 1 ("255","0","0", "0.5", 0, False, "300", "300") (picture) (handlekeys) (const id)
+main = play window white 1 ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset") (picture) (handlekeys) (const id)
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
