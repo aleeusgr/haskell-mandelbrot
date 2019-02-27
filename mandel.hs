@@ -6,7 +6,7 @@ import Data.ByteString (ByteString, pack)
 import Data.Char
 
 type Word8Color = (Word8,Word8,Word8,Word8)
-type Settings = (Int, String, String,String, Float, Bool)
+type Settings = (String, String, String,String, Float, Bool)
 
 {- mandel z c 
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
@@ -155,15 +155,17 @@ stepTo x y s
 picture :: Settings -> Picture
 picture (it, xcord, ycord, zoom,c,r)
                 | r == False = pictures
-                  [translate (0) (350-(150*c))$ Color yellow (rectangleSolid 700 120),
-                  translate (-340) (150) $  Text $"X:"++ xcord,
-                  translate (-340) (0) $  Text $"Y:"++ycord,
-                  translate (-340) (-150) $ Text $"Z:"++zoom]
+                  [translate (0) (250-(150*c))$ Color yellow (rectangleSolid 700 120),
+                  translate (-340) (200) $  Text $"It:"++ it,
+                  translate (-340) (50) $  Text $"X:"++ xcord,
+                  translate (-340) (-100) $  Text $"Y:"++ycord,
+                  translate (-340) (-250) $ Text $"Z:"++zoom]
                 | otherwise = let
                                 x = read(xcord)
                                 y = read(ycord)
                                 zoomer = read(zoom)
-                              in bitmapOfByteString 300 300 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer it) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
+                                iter = read(it)
+                              in pictures[rectangleSolid 310 310,bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (300, 300) (x, y) zoomer iter) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
 
 
@@ -171,39 +173,37 @@ window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
 handlekeys :: Event -> Settings -> Settings
-handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
+handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r) =
   let xcenter = read(x'')
       ycenter = read(y'')
       oldzoom = read(zoom)
       newzoom = show(read(zoom)*1.5)
       x= show(realPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
       y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
-    in(it, x, y, newzoom, c, r)
-handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) (it,x'',y'',zoom,c,r) =
+    in if(r) then (it, x, y, newzoom, c, r) else current
+handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r) =
   let xcenter = read(x'')
       ycenter = read(y'')
       oldzoom = read(zoom)
       newzoom = show(read(zoom)*0.5)
       x= show(realPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
       y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) (300,300) oldzoom))
-    in(it, x, y, newzoom, c, r)
-handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r) =if(c > 1) then (it,x,y,z,c-1,r) else current
+    in if(r) then (it, x, y, newzoom, c, r) else current
+handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r) =if(c > 0) then (it,x,y,z,c-1,r) else current
 handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r) = if(c < 3) then (it,x,y,z,c+1,r) else current
 handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r) = (it,x,y,z,c,r==False)
 handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r)
   | r == True = current
+  | c == 0 && k == '\b' = if(length(x) < 1) then current else (init(it),x,y,z,c,r)
   | c == 1 && k == '\b' = if(length(x) < 1) then current else (it,init(x),y,z,c,r)
   | c == 2 && k == '\b' = if(length(y) < 1) then current else(it,x,init(y),z,c,r)
   | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r)
   | isDigit k == False && k /= '.' && k /= '-' = current
+  | c == 0 = (it++[k],x,y,z,c,r)
   | c == 1 = (it,x++[k],y,z,c,r)
   | c == 2 = (it,x,y++[k],z,c,r)
   | c == 3 = (it,x,y,z++[k],c,r)
 handlekeys _ current = current
 
 main :: IO()
-main = play window white 1 (255,"0","0", "0.5", 1, False) (picture) (handlekeys) (const id)
-
-
-----------------------------------------------------------------------------------------------------------------------------------------
---Test Cases
+main = play window white 1 ("255","0","0", "0.5", 0, False) (picture) (handlekeys) (const id)
