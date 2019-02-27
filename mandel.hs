@@ -20,13 +20,13 @@ type Settings = (String, String, String,String, Float, Bool, String, String,Stri
 {-expCalc exp z
   DESCRIPTION:
   RETURNS:
-  EXAMPLES: 
+  EXAMPLES:
 -}
 expCalc :: RealFloat a => Int -> Complex a -> Complex a
-expCalc 0 z = 1 
+expCalc 0 z = 1
 expCalc exp z = z * (expCalc (exp-1) z)
 
-{- mandelSet z c 
+{- mandelSet z c
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
    RETURNS: A number in the Mandelbrot set, based on z and c
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
@@ -34,10 +34,10 @@ expCalc exp z = z * (expCalc (exp-1) z)
 mandelSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 mandelSet z c e = (expCalc e z) + c
 
-{-burningShipSet z c 
+{-burningShipSet z c
   DESCRIPTION:
   RETURNS:
-  EXAMPLES: 
+  EXAMPLES:
 -}
 burningShipSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 burningShipSet z c e = expCalc e (abs(realPart z) :+ abs(imagPart z)) + c
@@ -45,7 +45,7 @@ burningShipSet z c e = expCalc e (abs(realPart z) :+ abs(imagPart z)) + c
 {-tricornSet z c
   DESCRIPTION:
   RETURNS:
-  EXAMPLES: 
+  EXAMPLES:
 -}
 tricornSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 tricornSet z c e = expCalc e (conjugate z) + c
@@ -53,7 +53,7 @@ tricornSet z c e = expCalc e (conjugate z) + c
 {-juliaSet z c
   DESCRIPTION:
   RETURNS:
-  EXAMPLES: 
+  EXAMPLES:
 -}
 juliaSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 juliaSet z c e = expCalc e z + 0.279
@@ -74,12 +74,11 @@ iterationCheck z maxIt fractalSet e
   | fractalSet == "burningShipSet" = iterationCheckAux burningShipSet 0 maxIt z z e
   | fractalSet == "tricornSet" = iterationCheckAux tricornSet 0 maxIt z z e
   | fractalSet == "juliaSet" = iterationCheckAux juliaSet 0 maxIt z z e
-  | fractalSet == "epicSet" = iterationCheckAux epicSet 0 maxIt z z e
   | otherwise = iterationCheckAux mandelSet 0 maxIt z z e
 
 {- iterationCheckAux f currIt maxIt z c
    DESCRIPTION: Calculates how many iterations of f it takes for z to approach infinity
-   PRE: maxIt > 0, 
+   PRE: maxIt > 0,
    RETURNS: currIt, i.e. the number of iterations passed
    EXAMPLES: iterationCheckAux mandel 0 255 (0.05 :+ 0.9) (0.05 :+ 0) -> 255
    VARIANT: maxIt - currIt
@@ -98,7 +97,7 @@ iterationCheckAux f currIt maxIt z c e
    EXAMPLES: coordToComp (20,20) (0,0) (50,50) 0.5 -> 1.6 :+ 1.6
 -}
 coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
-coordToComp (px,py) (cx,cy) (rx,ry) zm = 
+coordToComp (px,py) (cx,cy) (rx,ry) zm =
   let
     aux p r c z = (p * 2) / (r * z) + c
     rm = max rx ry
@@ -106,20 +105,20 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
     (aux px rm cx zm) :+ ((aux py rm cy zm))
 
 {- iterationList res cent zoom max_it
-   DESCRIPTION: 
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
+   DESCRIPTION:
+   PRE:
+   RETURNS:
+   EXAMPLES:
 -}
 iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> String -> Int -> [Int]
 iterationList r@(rx,ry) c z it f e = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it f e
 
-{- iterationListAux 
-   DESCRIPTION:  
-   PRE: 
-   RETURNS: 
-   EXAMPLES: 
-   VARIANT: 
+{- iterationListAux
+   DESCRIPTION:
+   PRE:
+   RETURNS:
+   EXAMPLES:
+   VARIANT:
 -}
 iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> String -> Int -> [Int]
 iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f e
@@ -133,7 +132,7 @@ iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f e
 
 
 {- createRGBA iter ls
-   DESCRIPTION: Converts a list of iterations to a graphical representation 
+   DESCRIPTION: Converts a list of iterations to a graphical representation
    PRE: 0 <= x < length ls for all x that are elements of iter
    RETURNS: ByteString of rgba-colors from ls matched to elements of iter.
    EXAMPLES: createRGBA [1,0,2,2,1] [(255,0,0,255),(0,255,0,255),(0,0,255,255)] -> [0,255,0,255,255,0,0,255,0,0,255,255,0,0,255,255,0,255,0,255]
@@ -158,8 +157,8 @@ cap xs x i = take i xs ++ [x]
 
 {- cycleGrad l s
    DESCRIPTION: Takes a gradient, connects the last color to the first, and cycles it infinitely
-   PRE: length l >= 2 
-   RETURNS: An infinite list of a repeating color gradient 
+   PRE: length l >= 2
+   RETURNS: An infinite list of a repeating color gradient
 -}
 cycleGrad :: [Word8Color] -> Word8 -> [Word8Color]
 cycleGrad l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
@@ -187,7 +186,7 @@ twoCGradient c1@(r1,g1,b1,a1) c2@(r2,g2,b2,a2) s
   | (r1,g1,b1,a1) == (r2,g2,b2,a1) = []
   | otherwise = c1 : (twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), (stepTo a1 a2 s)) c2 s)
 
-{- stepTo x y s 
+{- stepTo x y s
    DESCRIPTION: Makes x approach y through adding a certain step-size s
    PRE: s > 0
    RETURNS: x + s if x < y, x - s if x > y
@@ -200,19 +199,12 @@ stepTo x y s
   | otherwise = x + s
 
 --------------------------------------------------------------------------------------------------------------------------------------
-
---picture it = bitmapOfByteString 1000 1000 (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList (1000, 1000) (-0.7,-0.3) 20 it) (cap (cycleGrad [(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) it))) True
---main = display (InWindow "Epic Insane Gamer Window" (1000, 1000) (30, 30)) white $ picture 127 
-
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-{-xres :: String
-xres = "300"
-yres :: String
-yres = "300"
+{-picture settings@(it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
+DESCRIPTION: Defines the picture for either the menu where you can choose values or the fractal based on those values
+PRE: The sting varibles in it, xcord, ycord, zoom, xres, yres and exp need to be properly formatted numbers that can be run through the function read
+RETURNS: if r = False we return the picture of the menu with the current values and the yellow box behind the the currently selected feild
+EXAMPLES: How am I even supposed to do this?
 -}
-
-
 picture :: Settings -> Picture
 picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                 | r == False = pictures
@@ -235,49 +227,95 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 
+{-handlekeys event settigns@(it,x,y,zoom,c,r,xres,yres,exp,set)
+   DESCRIPTION: handles any and all user input from the user including mouseclicks, any letter/number button press and the two specialkeys KeyUp and KeyDown
+   PRE: The sting varibles in x, y, zoom, xres and yres need to be properly formatted numbers that can be run through the function read
+   RETURNS:
+          cases:
+            If keypress is backslash it returns same settings but missing the last character of the string corresponding to the value of c counting in the menu from top to top to bottom.
+            If keypress is a number a dot or a minus symbol it adds it to the string corrisponding to the value of c counting in the menu from top to top to bottom.
+            If keypress is is a letter i returns the same settings unless c is 6 in which case we add it like it was a number.
+            If keypress is up button and c is more than 0 we return same settings but c is one less. if c is less than or equal to 0 we return unchanged settings.
+            If keypress is down button and c is less than 7 we return same settings but c is one more. if c is more than or equal to 0 we return unchanged settings.
+            If keypress is enter button r boolean is toggled between True and False.
+            If keypress is a mousebutton and r is True it returns settings where x and y is the cordinateds clicked complex numbers counterpart. and soom is changed with a factor of 1.5 or a factor of 0.75 depending on left or right click
+   EXAMPLES: Few examples:
+            1. handlekeys (EventKey (Char '\b') Down (Modifiers Up Up Up) (0,0)) ("255","0","0","0.5",0,False,"100","100","2","mandel") -> ("25","0","0","0.5",0,False,"100","100","2","mandel")
+            2. handlekeys (EventKey (Char '\b') Down (Modifiers Up Up Up) (0,0)) ("","0","0","0.5",0,False,"100","100","2","mandel") -> ("","0","0","0.5",0,False,"100","100","2","mandel")
+            3. handlekeys (EventKey (Char '1') Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",1,False,"100","100","2","mandel") -> ("255","11","0","0.5",0,False,"100","100","2","mandel")
+            4. handlekeys (EventKey (Char 'b') Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",1,False,"100","100","2","mandel") -> ("255","1","0","0.5",0,False,"100","100","2","mandel")
+            5. handlekeys (EventKey (Char 'b') Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",6,False,"100","100","2","mandel") -> ("255","1","0","0.5",6,False,"100","100","2","mandelb")
+            6. handlekeys (EventKey (SpecialKey KeyUp) Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",6,False,"100","100","2","mandel") -> ("255","1","0","0.5",5,False,"100","100","2","mandel")
+            7. handlekeys (EventKey (SpecialKey KeyEnter) Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",6,False,"100","100","2","mandel") -> ("255","1","0","0.5",6,True,"100","100","2","mandel")
+            8. handlekeys (EventKey (MouseButton LeftButton) Down (Modifiers Up Up Up) (-10,-50)) ("255","0","0","0.5",6,True,"100","100","2","mandel")->("255","-0.4","-2.0","0.75",6.0,True,"100","100","2","mandel")
+-}
 handlekeys :: Event -> Settings -> Settings
-handlekeys (EventKey (MouseButton LeftButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
-  let xcenter = read(x'')
-      ycenter = read(y'')
-      oldzoom = read(zoom)
-      newzoom = show(read(zoom)*1.5)
-      x= show(realPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-      y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-    in if(r) then (it, x, y, newzoom, c, r,xres,yres,exp,set) else current
-handlekeys (EventKey (MouseButton RightButton) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
-  let xcenter = read(x'')
-      ycenter = read(y'')
-      oldzoom = read(zoom)
-      newzoom = show(read(zoom)*0.5)
-      x= show(realPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-      y= show(imagPart(coordToComp (x',y') (xcenter,ycenter) ((fromIntegral (read xres)),(fromIntegral (read yres))) oldzoom))
-    in if(r) then (it, x, y, newzoom, c, r,xres,yres,exp,set) else current
+handlekeys (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
+  let
+      x= show(realPart(coordToComp (x',y') ((read x''),(read y'')) ((fromIntegral (read xres)),(fromIntegral (read yres))) (read zoom)))
+      y= show(imagPart(coordToComp (x',y') ((read x''),(read y'')) ((fromIntegral (read xres)),(fromIntegral (read yres))) (read zoom)))
+    in
+    if(r && (but == LeftButton || but == RightButton))
+      then
+        (if (but == LeftButton)
+          then (it, x, y, show((read zoom)*1.5), c, r,xres,yres,exp,set)
+          else (it, x, y, show((read zoom)*0.75), c, r,xres,yres,exp,set))
+    else current
 handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres,exp,set) else current
 handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) = if(c < 7) then (it,x,y,z,c+1,r,xres,yres,exp,set) else current
 handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres,exp,set) = (it,x,y,z,c,r==False,xres,yres,exp,set)
-handlekeys (EventKey (Char k) Down _ _) current@(it,x,y,z,c,r,xres,yres,exp,set)
+handlekeys (EventKey (Char k) Down _ _) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set)
   | r == True = current
-  | c == 0 && k == '\b' = if(length(it) < 1) then current else (init(it),x,y,z,c,r,xres,yres,exp,set)
-  | c == 1 && k == '\b' = if(length(x) < 1) then current else (it,init(x),y,z,c,r,xres,yres,exp,set)
-  | c == 2 && k == '\b' = if(length(y) < 1) then current else(it,x,init(y),z,c,r,xres,yres,exp,set)
-  | c == 3 && k == '\b' = if(length(z) < 1) then current else(it,x,y,init(z),c,r,xres,yres,exp,set)
-  | c == 4 && k == '\b' = if(length(xres) < 1) then current else(it,x,y,z,c,r,init(xres),yres,exp,set)
-  | c == 5 && k == '\b' = if(length(yres) < 1) then current else(it,x,y,z,c,r,xres,init(yres),exp,set)
-  | c == 6 && k == '\b' = if(length(set) < 1) then current else(it,x,y,z,c,r,xres,yres,exp,init(set))
-  | c == 7 && k == '\b' = if(length(exp) < 1) then current else(it,x,y,z,c,r,xres,yres,init(exp),set)
-  | c == 6 =(it,x,y,z,c,r,xres,yres,exp,set++[k])
+  | k == '\b' = erase current
+  | c == 6 = addChar current k
   | isDigit k == False && k /= '.' && k /= '-' = current
+  | otherwise = addChar current k
+handlekeys _ current = current
+
+{- erase Settings@(it,x,y,z,c,r,xres,yres,exp,set)
+  DESCRIPTION: Removes the last letter from the currently highlighted feild in menu
+  Pre:True
+  Returns: all the same settings except for the last character in the string corresponding to the value of c in the menu counted from top to bottom is removed
+  Example: erase ("255","0","0","0.5",0,True,"100","100","2","mandel") -> ("25","0","0","0.5",0.0,True,"100","100","2","mandel")
+-}
+erase :: Settings -> Settings
+erase current@(it,x,y,z,c,r,xres,yres,exp,set)
+  | c == 0 = if(length(it) < 1) then current else (init(it),x,y,z,c,r,xres,yres,exp,set)
+  | c == 1 = if(length(x) < 1) then current else (it,init(x),y,z,c,r,xres,yres,exp,set)
+  | c == 2 = if(length(y) < 1) then current else(it,x,init(y),z,c,r,xres,yres,exp,set)
+  | c == 3 = if(length(z) < 1) then current else(it,x,y,init(z),c,r,xres,yres,exp,set)
+  | c == 4 = if(length(xres) < 1) then current else(it,x,y,z,c,r,init(xres),yres,exp,set)
+  | c == 5 = if(length(yres) < 1) then current else(it,x,y,z,c,r,xres,init(yres),exp,set)
+  | c == 6 = if(length(set) < 1) then current else(it,x,y,z,c,r,xres,yres,exp,init(set))
+  | c == 7 = if(length(exp) < 1) then current else(it,x,y,z,c,r,xres,yres,init(exp),set)
+  |otherwise = current
+
+{- addChar Settings@(it,x,y,z,c,r,xres,yres,exp,set) char
+  DESCRIPTION: adds char to the currently highlighted feild in menu
+  Pre:True
+  Returns: all the same settings except char is added to the end of the string corresponding to the value of c in the menu counted from top to bottom
+  Example: addChar ("255","0","0","0.5",6,True,"100","100","2","mandel") 'S' -> ("255","0","0","0.5",6.0,True,"100","100","2","mandelS")
+-}
+addChar :: Settings -> Char -> Settings
+addChar (it,x,y,z,c,r,xres,yres,exp,set) k
   | c == 0 = (it++[k],x,y,z,c,r,xres,yres,exp,set)
   | c == 1 = (it,x++[k],y,z,c,r,xres,yres,exp,set)
   | c == 2 = (it,x,y++[k],z,c,r,xres,yres,exp,set)
   | c == 3 = (it,x,y,z++[k],c,r,xres,yres,exp,set)
   | c == 4 = (it,x,y,z,c,r,xres++[k],yres,exp,set)
   | c == 5 = (it,x,y,z,c,r,xres,yres++[k],exp,set)
+  | c == 6 = (it,x,y,z,c,r,xres,yres,exp,set++[k])
   | c == 7 = (it,x,y,z,c,r,xres,yres,exp++[k],set)
-handlekeys _ current = current
+
+{-initialSettings
+DESCRIPTION: The starting settings when window opens
+RETURNS: The settings as follows ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset")
+-}
+initialSettings :: Settings
+initialSettings = ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset")
 
 main :: IO()
-main = play window white 1 ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset") (picture) (handlekeys) (const id)
+main = play window white 1 initialSettings (picture) (handlekeys) (const id)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
