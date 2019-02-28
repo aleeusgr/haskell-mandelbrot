@@ -223,7 +223,7 @@ EXAMPLES: How am I even supposed to do this?
 picture :: Settings -> Picture
 picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                 | r == False = pictures
-                  [translate (0) (280-(75*c))$ Color yellow (rectangleSolid 700 80),
+                  [translate (0) (280-(75*c))$ Color yellow (rectangleSolid 4500 80),
                   translate (-340) (250) $  Scale 0.5 0.5 (Text $ "It:"++ it),
                   translate (-340) (175) $  Scale 0.5 0.5 (Text $ "X:"++ xcord),
                   translate (-340) (100) $  Scale 0.5 0.5 (Text $ "Y:"++ycord),
