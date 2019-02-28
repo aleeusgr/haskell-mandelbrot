@@ -6,27 +6,38 @@ import Data.ByteString (ByteString, pack)
 import Data.Char
 import Test.HUnit
 
-{-
-
+{- This datatype represents a color on the RGBA-format 
+     One complete RGBA-color contains four values and is therefore represented as a 4-tuple
+     INVARIANT:  ?????????????????????????????????????????????????????????????????????
 -}
 type Word8Color = (Word8,Word8,Word8,Word8)
 
-{-
-
+ {- ... description of what the data type represents ... 
+     ... description of how the datatype represents data ...
+     INVARIANT:  ... a predicate on elements of the datatype that the code preserves at all times ...
 -}
+
+{- ??????????????????????????? 
+   ???????????????????????????
+   ?????????????????????????
+-}
+
 type Settings = (String, String, String,String, Float, Bool, String, String,String,String)
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 {-expCalc exp z
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+  DESCRIPTION: Calculates a certain number to the power of the input exponent
+  RETURNS: z to the power of exp
+  PRE: TRUE
+  EXAMPLES: expCalc 3 (1 :+ 2) -> (-11.0) :+ (-2.0)
 -}
 expCalc :: RealFloat a => Int -> Complex a -> Complex a
-expCalc 0 z = 1
-expCalc exp z = z * (expCalc (exp-1) z)
+expCalc exp z
+  | exp == 0  = 1
+  | exp > 0   = z * (expCalc (exp-1) z)
+  | otherwise = 1 / (expCalc (-exp) z)
 
-{- mandelSet z c
+{- mandelSet z c e
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
    RETURNS: A number in the Mandelbrot set, based on z and c
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
@@ -34,34 +45,37 @@ expCalc exp z = z * (expCalc (exp-1) z)
 mandelSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 mandelSet z c e = (expCalc e z) + c
 
-{-burningShipSet z c
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+{-burningShipSet z c e
+  DESCRIPTION: 
+  RETURNS: 
+  EXAMPLES: 
 -}
 burningShipSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 burningShipSet z c e = expCalc e (abs(realPart z) :+ abs(imagPart z)) + c
 
-{-tricornSet z c
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+{-tricornSet z c e
+  DESCRIPTION: 
+  RETURNS: 
+  EXAMPLES: 
 -}
 tricornSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 tricornSet z c e = expCalc e (conjugate z) + c
 
-{-juliaSet z c
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+{-juliaSet z c e
+  DESCRIPTION: Calculates one iteration of the formula for numbers in the Julia set
+  RETURNS: 
+  EXAMPLES: 
 -}
 juliaSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 juliaSet z c e = expCalc e z + 0.279
 
-
---collatzSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
---collatzSet z c e
-
+{-epicSet z c e
+  DESCRIPTION:
+  RETURNS: 
+  EXAMPLES: 
+-}
+epicSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
+epicSet z c e = (expCalc 2 z) + (expCalc 3 z) + c
 
 {- iterationCheck z maxIt fractalSet
    DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to approach infinity
@@ -74,6 +88,7 @@ iterationCheck z maxIt fractalSet e
   | fractalSet == "burningShipSet" = iterationCheckAux burningShipSet 0 maxIt z z e
   | fractalSet == "tricornSet" = iterationCheckAux tricornSet 0 maxIt z z e
   | fractalSet == "juliaSet" = iterationCheckAux juliaSet 0 maxIt z z e
+  | fractalSet == "epicSet" = iterationCheckAux epicSet 0 maxIt z z e
   | otherwise = iterationCheckAux mandelSet 0 maxIt z z e
 
 {- iterationCheckAux f currIt maxIt z c
@@ -134,7 +149,7 @@ iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f e
 {- createRGBA iter ls
    DESCRIPTION: Converts a list of iterations to a graphical representation
    PRE: 0 <= x < length ls for all x that are elements of iter
-   RETURNS: ByteString of rgba-colors from ls matched to elements of iter.
+   RETURNS: ByteString of rgba-colors from ls matched to elements of iter. ???????????????????????????????????????
    EXAMPLES: createRGBA [1,0,2,2,1] [(255,0,0,255),(0,255,0,255),(0,0,255,255)] -> [0,255,0,255,255,0,0,255,0,0,255,255,0,0,255,255,0,255,0,255]
    VARIANT: length iter
 -}
