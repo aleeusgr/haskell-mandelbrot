@@ -226,7 +226,8 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
-                              in pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set ((read exp) :+ 0)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
+                              in 
+                                pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set ((read exp) :+ 0)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
