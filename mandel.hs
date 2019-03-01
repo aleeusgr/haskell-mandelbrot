@@ -26,57 +26,46 @@ type Word8Color = (Word8,Word8,Word8,Word8)
 type Settings = (String, String, String,String, Float, Bool, String, String,String,String)
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-{-expCalc exp z
-  DESCRIPTION: Calculates a certain number to the power of the input exponent
-  RETURNS: z to the power of exp
-  PRE: TRUE
-  EXAMPLES: expCalc 3 (1 :+ 2) -> (-11.0) :+ (-2.0)
--}
-expCalc :: RealFloat a => Int -> Complex a -> Complex a
-expCalc exp z
-  | exp == 0  = 1
-  | exp > 0   = z * (expCalc (exp-1) z)
-  | otherwise = 1 / (expCalc (-exp) z)
 
 {- mandelSet z c e
    DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
    RETURNS: A number in the Mandelbrot set, based on z and c
    EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
 -}
-mandelSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
-mandelSet z c e = (expCalc e z) + c
+mandelSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
+mandelSet z c e = z ** e + c
 
 {-burningShipSet z c e
   DESCRIPTION:
   RETURNS:
   EXAMPLES:
 -}
-burningShipSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
-burningShipSet z c e = expCalc e (abs(realPart z) :+ abs(imagPart z)) + c
+burningShipSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
+burningShipSet z c e = (abs(realPart z) :+ abs(imagPart z)) ** e + c
 
 {-tricornSet z c e
   DESCRIPTION:
   RETURNS:
   EXAMPLES:
 -}
-tricornSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
-tricornSet z c e = expCalc e (conjugate z) + c
+tricornSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
+tricornSet z c e = (conjugate z) ** e + c
 
 {-juliaSet z c e
   DESCRIPTION: Calculates one iteration of the formula for numbers in the Julia set
   RETURNS:
   EXAMPLES:
 -}
-juliaSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
-juliaSet z c e = expCalc e z + 0.279
+juliaSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
+juliaSet z _ e = z ** e + 0.279
 
 {-epicSet z c e
   DESCRIPTION:
   RETURNS:
   EXAMPLES:
 -}
-epicSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
-epicSet z c e = (expCalc 2 z) + (expCalc 3 z) + c
+epicSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
+epicSet z c e = z ** 2 + z ** 3 + c
 
 {- iterationCheck z maxIt fractalSet
    DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to approach infinity
@@ -84,7 +73,7 @@ epicSet z c e = (expCalc 2 z) + (expCalc 3 z) + c
    RETURNS: The number of iterations it takes for z to grow beyond the size of what is allowed in a Mandelbrot set
    EXAMPLES: iterationCheck (0.05 :+ 0.9) 255 -> 5
 -}
-iterationCheck :: RealFloat a => Complex a -> Int -> String -> Int -> Int
+iterationCheck :: RealFloat a => Complex a -> Int -> String -> Complex a -> Int
 iterationCheck z maxIt fractalSet e
   | fractalSet == "burningShipSet" = iterationCheckAux burningShipSet 0 maxIt z z e
   | fractalSet == "tricornSet" = iterationCheckAux tricornSet 0 maxIt z z e
@@ -99,7 +88,7 @@ iterationCheck z maxIt fractalSet e
    EXAMPLES: iterationCheckAux mandel 0 255 (0.05 :+ 0.9) (0.05 :+ 0) -> 255
    VARIANT: maxIt - currIt
 -}
-iterationCheckAux :: RealFloat a => (Complex a -> Complex a -> Int -> Complex a) -> Int -> Int -> Complex a -> Complex a -> Int -> Int
+iterationCheckAux :: RealFloat a => (Complex a -> Complex a -> Complex a -> Complex a) -> Int -> Int -> Complex a -> Complex a -> Complex a -> Int
 iterationCheckAux f currIt maxIt z c e
   | currIt >= maxIt = currIt
   | magnitude(z) > 2 = currIt
@@ -126,7 +115,7 @@ coordToComp (px,py) (cx,cy) (rx,ry) zm =
    RETURNS:
    EXAMPLES:
 -}
-iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> String -> Int -> [Int]
+iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> String -> Complex a -> [Int]
 iterationList r@(rx,ry) c z it f e = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it f e
 
 {- iterationListAux
@@ -136,7 +125,7 @@ iterationList r@(rx,ry) c z it f e = iterationListAux (-rx `div` 2, ry `div` 2 -
    EXAMPLES:
    VARIANT:
 -}
-iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> String -> Int -> [Int]
+iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> String -> Complex a -> [Int]
 iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f e
   | py < (-ry) `div` 2 = []
   | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it f e
@@ -238,9 +227,8 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
-                              in fm (x, y, zoomer, iter, xres, yres, set, exp)
-
-fm a = memo (\(x, y, zoomer, iter, xres, yres, set, exp) -> pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set (read exp)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]) a
+                              in
+                                pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set ((read exp) :+ 0)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
