@@ -5,19 +5,20 @@ import Graphics.Gloss.Interface.Pure.Game
 import Data.ByteString (ByteString, pack)
 import Data.Char
 import Test.HUnit
+import Data.StableMemo
 
-{- This datatype represents a color on the RGBA-format 
+{- This datatype represents a color on the RGBA-format
      One complete RGBA-color contains four values and is therefore represented as a 4-tuple
      INVARIANT:  ?????????????????????????????????????????????????????????????????????
 -}
 type Word8Color = (Word8,Word8,Word8,Word8)
 
- {- ... description of what the data type represents ... 
+ {- ... description of what the data type represents ...
      ... description of how the datatype represents data ...
      INVARIANT:  ... a predicate on elements of the datatype that the code preserves at all times ...
 -}
 
-{- ??????????????????????????? 
+{- ???????????????????????????
    ???????????????????????????
    ?????????????????????????
 -}
@@ -46,33 +47,33 @@ mandelSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 mandelSet z c e = (expCalc e z) + c
 
 {-burningShipSet z c e
-  DESCRIPTION: 
-  RETURNS: 
-  EXAMPLES: 
+  DESCRIPTION:
+  RETURNS:
+  EXAMPLES:
 -}
 burningShipSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 burningShipSet z c e = expCalc e (abs(realPart z) :+ abs(imagPart z)) + c
 
 {-tricornSet z c e
-  DESCRIPTION: 
-  RETURNS: 
-  EXAMPLES: 
+  DESCRIPTION:
+  RETURNS:
+  EXAMPLES:
 -}
 tricornSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 tricornSet z c e = expCalc e (conjugate z) + c
 
 {-juliaSet z c e
   DESCRIPTION: Calculates one iteration of the formula for numbers in the Julia set
-  RETURNS: 
-  EXAMPLES: 
+  RETURNS:
+  EXAMPLES:
 -}
 juliaSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 juliaSet z c e = expCalc e z + 0.279
 
 {-epicSet z c e
   DESCRIPTION:
-  RETURNS: 
-  EXAMPLES: 
+  RETURNS:
+  EXAMPLES:
 -}
 epicSet :: RealFloat a => Complex a -> Complex a -> Int -> Complex a
 epicSet z c e = (expCalc 2 z) + (expCalc 3 z) + c
@@ -237,7 +238,9 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
-                              in pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set (read exp)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
+                              in fm (x, y, zoomer, iter, xres, yres, set, exp)
+
+fm a = memo (\(x, y, zoomer, iter, xres, yres, set, exp) -> pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set (read exp)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]) a
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
@@ -324,10 +327,10 @@ addChar (it,x,y,z,c,r,xres,yres,exp,set) k
 
 {-initialSettings
 DESCRIPTION: The starting settings when window opens
-RETURNS: The settings as follows ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset")
+RETURNS: The settings as follows ("100","0","0", "0.5", 0, False, "250", "250","2","mandelbrotset")
 -}
 initialSettings :: Settings
-initialSettings = ("255","0","0", "0.5", 0, False, "300", "300","2","mandelbrotset")
+initialSettings = ("100","0","0", "0.5", 0, False, "250", "250","2","mandelbrotset")
 
 main :: IO()
 main = play window white 1 initialSettings (picture) (handlekeys) (const id)
