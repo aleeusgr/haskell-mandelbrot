@@ -11,19 +11,17 @@ import Test.HUnit
 -}
 type Word8Color = (Word8,Word8,Word8,Word8)
 
- {- ... description of what the data type represents ...
-     ... description of how the datatype represents data ...
-     INVARIANT:  ... a predicate on elements of the datatype that the code preserves at all times ...
--}
-
-{- ???????????????????????????
-   ???????????????????????????
-   ?????????????????????????
+{- All the settings that can be altered by the user is stored here.
+   First element is how max iterations used in iteration list. Second element is the x-coordinate that is center of screen.
+   Third argument is y-coordinate center on screen. Forth element is the zoom factor. Fifth element is the active menu feild counted from top to top to bottom
+   sixth element is what mode is currently in, False is Menu mode and True is fractal mode. Seventh is width of fractal. Eight is Height of fractal.
+   Ninth is the exponent used to generate the fractal and tenth is the type of fractal.
+   INVARIANT: element 1,7 and 8 can only contain characters that are digits. Element 2,3,4 and 9 can only be conatain characters that are digits or be either '-' or '.'
 -}
 
 type Settings = (String, String, String,String, Float, Bool, String, String,String,String)
 
-{- View a = (res@, cent, zm)
+{- View a = (res, cent, zm)
  - This datatype represents a view of the complex number plane.
  - res represents the resolution of the view in pixels. cent represents the number that the view is centered on.
  - zm represents the zoom factor, i.e. how much the view is zoomed in. For example, zoom factor of 1 gives a view that spans 2 length
@@ -238,7 +236,7 @@ stepTo x y s
 DESCRIPTION: Defines the picture for either the menu where you can choose values or the fractal based on those values
 PRE: The sting varibles in it, xcord, ycord, zoom, xres, yres and exp need to be properly formatted numbers that can be run through the function read
 RETURNS: if r = False we return the picture of the menu with the current values and the yellow box behind the the currently selected feild
-EXAMPLES: How am I even supposed to do this?
+EXAMPLES: picture ("100","0","0","0.5",1,True,"100","100","2","mandel") -> Pictures [Polygon [(-55.0,-55.0),(-55.0,55.0),(55.0,55.0),(55.0,-55.0)],Bitmap BitmapData]
 -}
 picture :: Settings -> Picture
 picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
@@ -282,8 +280,8 @@ window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
    PRE: The sting varibles in x, y, zoom, xres and yres need to be properly formatted numbers that can be run through the function read
    RETURNS:
           cases:
-            If keypress is backslash it returns same settings but missing the last character of the string corresponding to the value of c counting in the menu from top to top to bottom.
-            If keypress is a number a dot or a minus symbol it adds it to the string corrisponding to the value of c counting in the menu from top to top to bottom.
+            If keypress is backslash it returns same settings but missing the last character of the string corresponding to the value of c counting in the menu from top to bottom.
+            If keypress is a number a dot or a minus symbol it adds it to the string corrisponding to the value of c counting in the menu from top to bottom
             If keypress is is a letter i returns the same settings unless c is 6 in which case we add it like it was a number.
             If keypress is up button and c is more than 0 we return same settings but c is one less. if c is less than or equal to 0 we return unchanged settings.
             If keypress is down button and c is less than 7 we return same settings but c is one more. if c is more than or equal to 0 we return unchanged settings.
