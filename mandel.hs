@@ -5,11 +5,9 @@ import Graphics.Gloss.Interface.Pure.Game
 import Data.ByteString (ByteString, pack)
 import Data.Char
 import Test.HUnit
-import Data.StableMemo
 
-{- This datatype represents a color on the RGBA-format
+{- This datatype represents a color in RGBA format
      One complete RGBA-color contains four values and is therefore represented as a 4-tuple
-     INVARIANT:  ?????????????????????????????????????????????????????????????????????
 -}
 type Word8Color = (Word8,Word8,Word8,Word8)
 
@@ -25,179 +23,211 @@ type Word8Color = (Word8,Word8,Word8,Word8)
 
 type Settings = (String, String, String,String, Float, Bool, String, String,String,String)
 
+{- View a = (res@, cent, zm)
+ - This datatype represents a view of the complex number plane.
+ - res represents the resolution of the view in pixels. cent represents the number that the view is centered on.
+ - zm represents the zoom factor, i.e. how much the view is zoomed in. For example, zoom factor of 1 gives a view that spans 2 length
+ - units in the complex number plane, while a zoom factor of 4 gives a view that spans 0.5 length units.
+ - INVARIANT: No element of res is 0. zm /= 0.
+ -}
+type View a = ((Int, Int), Complex a, a)
+
 ---------------------------------------------------------------------------------------------------------------------------------------
 
 {- mandelSet z c e
-   DESCRIPTION: Calculates one iteration of the formula for numbers in the Mandelbrot set
-   RETURNS: A number in the Mandelbrot set, based on z and c
-   EXAMPLES: mandel (4 :+ 2) (2 :+ 3) -> 14.0 :+ 19.0
+   DESCRIPTION: Calculates one iteration of the function used for determining whether a number is in the mandelbrot set.
+   RETURNS: The result of applying the "mandelbrot" function to z and c with exponent e
+   EXAMPLES: mandelSet (1 :+ (-1)) ((-1) :+ 1) 2 -> (-1.0) :+ (-1.0)
 -}
 mandelSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
 mandelSet z c e = z ** e + c
 
-{-burningShipSet z c e
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+{- burningShipSet z c e
+   DESCRIPTION: Calculates one iteration of the function used for determining whether a number is in the burning ship fractal.
+   RETURNS: The result of applying the "burning ship" function to z and c with exponent e
+   EXAMPLES: burningShipSet (1 :+ (-1)) ((-1) :+ 1) 2 -> (-1.0) :+ 3.0
 -}
 burningShipSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
 burningShipSet z c e = (abs(realPart z) :+ abs(imagPart z)) ** e + c
 
-{-tricornSet z c e
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
+{- tricornSet z c e
+   DESCRIPTION: Calculates one iteration of the function used for determining whether a number is in the tricorn set.
+   RETURNS: The result of applying the "tricorn" function to z and c with exponent e
+   EXAMPLES: tricornSet (1 :+ (-1)) ((-1) :+ 1) 2 -> (-1.0) :+ 3.0
 -}
 tricornSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
 tricornSet z c e = (conjugate z) ** e + c
 
-{-juliaSet z c e
-  DESCRIPTION: Calculates one iteration of the formula for numbers in the Julia set
-  RETURNS:
-  EXAMPLES:
+{- juliaSet z c e
+   DESCRIPTION: Calculates one iteration of the function used for determining whether a number is in the julia set with constant value 0.279.
+   RETURNS: The result of applying the "julia" function to z and 0.279 with exponent e
+   EXAMPLES: juliaSet (1 :+ (-1)) ((-1) :+ 1) 2 -> 0.279 :+ (-2.0)
 -}
 juliaSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
 juliaSet z _ e = z ** e + 0.279
 
-{-epicSet z c e
-  DESCRIPTION:
-  RETURNS:
-  EXAMPLES:
--}
-epicSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
-epicSet z c e = z ** 2 + z ** 3 + c
+{- readSet set
+ - DESCRIPTION: Translates the name of a set to the appropriate iterative function.
+ - RETURNS: The function that is used for determining whether a complex number is within set. Returns mandelset if set does not match the name of any known set.
+ - EXAMPLES: readSet "juliaSet" = juliaSet
+ -   readSet "aksjdh" = mandelSet
+ -}
+readSet :: RealFloat a => String -> Complex a -> Complex a -> Complex a -> Complex a
+readSet "burningShipSet" = burningShipSet
+readSet "tricornSet" = tricornSet
+readSet "juliaSet" = juliaSet
+readSet _ = mandelSet
 
-{- iterationCheck z maxIt fractalSet
-   DESCRIPTION: Calculates how many iterations of the Mandelbrot formula it takes for z to approach infinity
+{- iterationCheck z maxIt func exp
+   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0.
    PRE: maxIt > 0
-   RETURNS: The number of iterations it takes for z to grow beyond the size of what is allowed in a Mandelbrot set
+   RETURNS: Just the number of iterations it takes for z to begin diverging from 0 when iterated over the function func with exponent exp. If z does not diverge after
+     maxIt iterations then Nothing is returned.
    EXAMPLES: iterationCheck (0.05 :+ 0.9) 255 -> 5
 -}
-iterationCheck :: RealFloat a => Complex a -> Int -> String -> Complex a -> Int
-iterationCheck z maxIt fractalSet e
-  | fractalSet == "burningShipSet" = iterationCheckAux burningShipSet 0 maxIt z z e
-  | fractalSet == "tricornSet" = iterationCheckAux tricornSet 0 maxIt z z e
-  | fractalSet == "juliaSet" = iterationCheckAux juliaSet 0 maxIt z z e
-  | fractalSet == "epicSet" = iterationCheckAux epicSet 0 maxIt z z e
-  | otherwise = iterationCheckAux mandelSet 0 maxIt z z e
+iterationCheck :: RealFloat a => Complex a -> Int -> (Complex a -> Complex a -> Complex a -> Complex a) -> Complex a -> Maybe Int
+iterationCheck z maxIt func exp = iterationCheckAux z maxIt func exp 0 z
 
-{- iterationCheckAux f currIt maxIt z c
-   DESCRIPTION: Calculates how many iterations of f it takes for z to approach infinity
-   PRE: maxIt > 0,
-   RETURNS: currIt, i.e. the number of iterations passed
+{- iterationCheckAux z maxIt func exp currIt c 
+   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0
+   PRE: maxIt > 0
+   RETURNS: Just the number of iterations it takes for z to begin diverging from 0, when iterated over the function func with exponent exp and constant value c. It is
+   assumed that currIt iterations have already been applied to z. If z does not diverge after maxIt iterations then Nothing is returned.
    EXAMPLES: iterationCheckAux mandel 0 255 (0.05 :+ 0.9) (0.05 :+ 0) -> 255
-   VARIANT: maxIt - currIt
+   VARIANT: maxIt - currIt + 1
 -}
-iterationCheckAux :: RealFloat a => (Complex a -> Complex a -> Complex a -> Complex a) -> Int -> Int -> Complex a -> Complex a -> Complex a -> Int
-iterationCheckAux f currIt maxIt z c e
-  | currIt >= maxIt = currIt
-  | magnitude(z) > 2 = currIt
-  | otherwise = iterationCheckAux f (currIt+1) maxIt (f z c e) c e
+iterationCheckAux :: RealFloat a => Complex a -> Int -> (Complex a -> Complex a -> Complex a -> Complex a) -> Complex a -> Int -> Complex a -> Maybe Int
+iterationCheckAux z maxIt func exp currIt c
+  | currIt > maxIt = Nothing
+  | magnitude(z) > 2 = Just currIt
+  | otherwise = iterationCheckAux (func z c exp) maxIt func exp (currIt+1) c 
 
-{- coordToComp pix cent res@(rx,ry) zm
-   DESCRIPTION: Converts an on-screen pixel to a coordinate in the complex number plane.
-   PRE: rx /= 0, ry /= 0, zm /= 0
-   RETURNS: The complex number located at position pix on a view of the complex number plane
-     with resolution res centered on the complex number cam with zoom factor zm. ??????????
-   EXAMPLES: coordToComp (20,20) (0,0) (50,50) 0.5 -> 1.6 :+ 1.6
+{- coordToComp pix view
+   DESCRIPTION: Gets the complex number located at a certain coordinate in a view of the complex number plane.
+   RETURNS: The complex number located at position pix in view.
+   EXAMPLES: coordToComp (15,15) ((30,30), (0 :+ 0), 0.5) -> 2.0 :+ 2.0
 -}
-coordToComp :: RealFloat a => (a, a) -> (a, a) -> (a, a) -> a -> Complex a
-coordToComp (px,py) (cx,cy) (rx,ry) zm =
+coordToComp :: RealFloat a => (a, a) -> View a -> Complex a
+coordToComp (px,py) ((rx, ry), (cx :+ cy), zm) =
   let
     aux p r c z = (p * 2) / (r * z) + c
-    rm = max rx ry
+    rm = fromIntegral $ min rx ry
   in
     (aux px rm cx zm) :+ ((aux py rm cy zm))
 
-{- iterationList res cent zoom max_it
-   DESCRIPTION:
-   PRE:
-   RETURNS:
-   EXAMPLES:
+{- iterationList view maxIt func exp
+   DESCRIPTION: Evaluates iterationCheck for each complex number visible in a certain view of the complex number plane.
+   PRE: maxIt > 0
+   RETURNS: A list of Just the number of iterations it takes for each complex number visible in view to begin diverging from 0 when iterated over the function func
+     with exponent exp. A complex number that does not begin diverging from 0 after maxIt iterations result in a Nothing element in the returned list. The order of
+     elements in the returned list is equivalent to traversing view left to right, top to bottom.
+   EXAMPLES: ((2, 2), ((-1.747) :+ 0), 8) 100 mandelSet 2 -> [Just 70, Nothing, Just 3, Just 3]
 -}
-iterationList :: RealFloat a => (Int, Int) -> (a, a) -> a -> Int -> String -> Complex a -> [Int]
-iterationList r@(rx,ry) c z it f e = iterationListAux (-rx `div` 2, ry `div` 2 - 1 + (ry `mod` 2)) c r z it f e
+iterationList :: RealFloat a => View a -> Int -> (Complex a -> Complex a -> Complex a -> Complex a) -> Complex a -> [Maybe Int]
+iterationList (r@(rx, ry), cent, zm) maxIt func exp =
+  let
+    aux p = coordToComp p ((fromIntegral rx, fromIntegral ry), cent, zm)
+  in
+    map (\p -> iterationCheck (aux p) maxIt func exp) (coordList r)
 
-{- iterationListAux
-   DESCRIPTION:
-   PRE:
-   RETURNS:
-   EXAMPLES:
-   VARIANT:
--}
-iterationListAux :: RealFloat a => (Int, Int) -> (a, a) -> (Int, Int) -> a -> Int -> String -> Complex a -> [Int]
-iterationListAux p@(px,py) c@(cx,cy) r@(rx,ry) zm it f e
-  | py < (-ry) `div` 2 = []
-  | px >= rx `div` 2 + (rx `mod` 2) = iterationListAux (-px + (rx `mod` 2), py - 1) c r zm it f e
+{- coordList res
+ - DESCRIPTION: Gets a list of all coordinates in a Gloss display.
+ - PRE: Al elements of res are greater than 0.
+ - RETURNS: A list of all coordinates in a Gloss display of dimensions res. List order is equivalent to traversing the display left to right, top to bottom.
+ - EXAMPLES: coordList (3, 3) = [(-1.0, 1.0), (0.0, 1.0), (1.0, 1.0), (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (-1.0, -1.0), (0.0, -1.0), (1.0, -1.0)]
+ -}
+coordList :: RealFloat a => (Int, Int) -> [(a, a)]
+coordList res = coordListAux res (0, 0)
+
+{- coordListAux res@(rx, ry) pix@(px, py)
+ - DESCRIPTION: Gets a partial list of all coordinates in a Gloss display.
+ - PRE: 0 <= px < rx, 0 <= py < ry
+ - RETURNS: A list of the coordinates in a Gloss display of dimensions res. Only the coordinates following and including the one located at pixel pix are
+ -   included. List order is equivalent to traversing the deisplay left to right, top to bottom.
+ - EXAMPLES: coordListAux (3, 3) (0, 1) -> [(-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (-1.0, -1.0), (0.0, -1.0), (1.0, -1.0)]
+ - VARIANT: rx * ry - px - py * rx
+ -}
+coordListAux :: RealFloat a => (Int, Int) -> (Int, Int) -> [(a, a)]
+coordListAux r@(rx, ry) p@(px, py)
+  | py >= ry = []
+  | px >= rx = coordListAux r (0, py + 1)
   | otherwise =
-      let
-        toRF x = fromIntegral x
-      in
-        (iterationCheck (coordToComp (toRF px, toRF py) c (toRF rx,toRF ry) zm) it f e) : (iterationListAux (px+1,py) c r zm it f e)
+    let
+      (x, y) = pixToCoord r p
+    in
+      (fromIntegral x, fromIntegral y) : (coordListAux r (px + 1, py))
 
+{- pixToCoord res pix
+ - DESCRIPTION: Translates the location of a pixel to a coordinate in a Gloss display.
+ - RETURNS: The Gloss coordinate located where the pixel pix is, relative to a Gloss display of dimensions res.
+ - EXAMPLES: pixToCoord (5, 5) (2, 2) -> (0, 0)
+ -   pixToCoord (5, 5) (0, 0) -> (-2, 2)
+ -}
+pixToCoord :: (Int, Int) -> (Int, Int) -> (Int, Int)
+pixToCoord (rx, ry) (px, py) = (px - (rx `div` 2), ry - py - 1 - (ry `div` 2))
 
-{- createRGBA iter ls
-   DESCRIPTION: Converts a list of iterations to a graphical representation
-   PRE: 0 <= x < length ls for all x that are elements of iter
-   RETURNS: ByteString of rgba-colors from ls matched to elements of iter. ???????????????????????????????????????
+{- createRGBA iters cols setCol
+   DESCRIPTION: Creates a visual representation of an iteration list.
+   PRE: 0 <= x < length cols for all Just x that are elements of iter
+   RETURNS: A Word8 list that can be converted to a bitmap image, where each color is picked from cols or setCol based on the elements of iter. More specifically,
+     if an element is Just x, then an element of cols is picked based on the magnitude of x (the greater the magnitude, the further down the list cols).
+     Otherwise setCol is picked. The order of colors in the returned list corresponds to the order of elements in iters.
    EXAMPLES: createRGBA [1,0,2,2,1] [(255,0,0,255),(0,255,0,255),(0,0,255,255)] -> [0,255,0,255,255,0,0,255,0,0,255,255,0,0,255,255,0,255,0,255]
    VARIANT: length iter
 -}
-createRGBA :: [Int] -> [Word8Color] -> [Word8]
-createRGBA [] _ = []
-createRGBA (x:xs) ls =
+createRGBA :: [Maybe Int] -> [Word8Color] -> Word8Color -> [Word8]
+createRGBA [] _ _ = []
+createRGBA (Nothing:xs) cols c@(r,g,b,a) = r : g : b : a : (createRGBA xs cols c)
+createRGBA (Just x:xs) cols c =
   let
-    (r,g,b,a) = (ls !! x)
+    (r,g,b,a) = (cols !! x)
   in
-    r : g : b : a : (createRGBA xs ls)
+    r : g : b : a : (createRGBA xs cols c)
 
-{- cap xs x i
-   DESCRIPTION: Ends a list at a certain index with a specific element.
-   PRE: length xs >= i
-   RETURNS: The first i elements of xs, with x appended.
-   EXAMPLES: [7,5,6,4,5] 0 2 -> [7,5,2]
- -}
-cap :: [a] -> a -> Int -> [a]
-cap xs x i = take i xs ++ [x]
-
-{- cycleGrad l s
-   DESCRIPTION: Takes a gradient, connects the last color to the first, and cycles it infinitely
+{- cycleGrad c s
+   DESCRIPTION: Creates a repeating cycle of a gradient between multiple colors
    PRE: length l >= 2
-   RETURNS: An infinite list of a repeating color gradient
+   RETURNS: A list of colors that form a gradient from each color in an infinitely repeating version of c such that the components of two consecutive colors differ by
+     no more than s.
+   EXAMPLES: cycleGrad [(255, 255, 0, 255), (0, 255, 255, 255), (255, 0, 255, 255)] 255 ->
+       [(255, 255, 0, 255), (0, 255, 255, 255), (255, 0, 255, 255), ad infinitum]
 -}
 cycleGrad :: [Word8Color] -> Word8 -> [Word8Color]
-cycleGrad l@(c:cs) s = cycle $ (gradient l s) ++ (twoCGradient (last cs) c s)
+cycleGrad l s = gradient (cycle l) s
 
 {- gradient c s
-   DESCRIPTION: Creates a complete gradient between multiple colors
+   DESCRIPTION: Creates a gradient between multiple colors
    PRE: length c >= 2
-   RETURNS: A color gradient between all the colors of c
-   EXAMPLES: gradient [(0,0,0,255),(50,40,60,255),(90,100,110,255)] 10 -> [0,0,0,255,10,10,10,255,20,20,20,255,30,30,30,255,40,40,40,255,50,40,50,255,50,40,60,255,60,50,70,255,70,60,80,255,80,70,90,255,90,80,100,255,90,90,110,255]
+   RETURNS: A list of colors that form a gradient from each color in c to the next, such that the components of two consecutive colors differ by no more than s.
+   EXAMPLES: gradient [(255, 127, 63, 255), (127, 255, 80, 255), (0, 127, 255, 255)] 64 -> 
+       [(255, 127, 63, 255), (191, 191, 80, 255), (127, 255, 80, 255), (63, 191, 144, 255), (0, 127, 208, 255), (0, 127, 255, 255)]
    VARIANT: length c
 -}
 gradient :: [Word8Color] -> Word8 -> [Word8Color]
+gradient [c] _ = [c]
 gradient [c1,c2] s = twoCGradient c1 c2 s
-gradient c@(c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (gradient (c2:cs) s)
+gradient c@(c1:c2:cs) s = (twoCGradient c1 c2 s) ++ (tail $ gradient (c2:cs) s)
 
 {- twoCGradient c1 c2 s
    DESCRIPTION: Creates a gradient between two colors
    PRE: s > 0
-   RETURNS: A list of colors (rgba-format) as a spectrum from c1 to c2 with difference s of every r,g,b values between the different colors
-   EXAMPLES: twoCGradient (50,100,200,255) (60,80,100,255) 5 -> [50,100,200,255,55,95,195,255,60,90,190,255,60,85,185,255,60,80,180,255,60,80,175,255,60,80,170,255,60,80,165,255,60,80,160,255,60,80,155,255,60,80,150,255,60,80,145,255,60,80,140,255,60,80,135,255,60,80,130,255,60,80,125,255,60,80,120,255,60,80,115,255,60,80,110,255,60,80,105,255]
-   VARIANT: The greatest difference between the components of c1 and c2
+   RETURNS: A list of colors (rgba-format) that form a gradient from c1 to c2, such that the components of two consecutive colors differ by no more than s.
+   EXAMPLES: twoCGradient (255, 127, 63, 255) (127, 255, 80, 255) 64 -> [(255, 127, 63, 255), (191, 191, 80, 255), (127, 255, 80, 255)]
+   VARIANT: The greatest difference a component of c1 and its corresponding component in c2
 -}
 twoCGradient :: Word8Color -> Word8Color -> Word8 -> [Word8Color]
 twoCGradient c1@(r1,g1,b1,a1) c2@(r2,g2,b2,a2) s
-  | (r1,g1,b1,a1) == (r2,g2,b2,a1) = []
+  | (r1,g1,b1,a1) == (r2,g2,b2,a1) = [c2]
   | otherwise = c1 : (twoCGradient ((stepTo r1 r2 s), (stepTo g1 g2 s), (stepTo b1 b2 s), (stepTo a1 a2 s)) c2 s)
 
 {- stepTo x y s
    DESCRIPTION: Makes x approach y through adding a certain step-size s
    PRE: s > 0
-   RETURNS: x + s if x < y, x - s if x > y
+   RETURNS: x, with a positive number no greater than s added or subtracted such that the result is as close to y as possible.
    EXAMPLES: stepTo 1 6 2 -> 3
+     stepTo 1 2 3 -> 2
 -}
-stepTo :: Word8 -> Word8 -> Word8 -> Word8
+stepTo :: Integral a => a -> a -> a -> a
 stepTo x y s
   | abs ((toInteger x) - (toInteger y)) <= (toInteger s) = y
   | x > y = x - s
@@ -227,8 +257,22 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 y = read(ycord)
                                 zoomer = read(zoom)
                                 iter = read(it)
+                                white = (255, 255, 255, 255)
+                                red = (255, 0, 0, 255)
+                                yellow = (255, 255, 0, 255)
+                                green = (0, 255, 0, 255)
+                                cyan = (0, 255, 255, 255)
+                                blue = (0, 0, 255, 255)
+                                violet = (255, 0, 255, 255)
+                                black = (0, 0, 0, 255)
+                                auraPalette = cycleGrad [white, red, yellow, green, cyan, blue, violet] 8
+                                border = rectangleSolid (fromIntegral (read xres) + 10) (fromIntegral (read xres) + 10)
+                                view = (((fromIntegral $ read xres), (fromIntegral $ read yres)), (x :+ y), zoomer)
+                                iterList = iterationList view iter (readSet set) ((read exp) :+ 0)
+                                format = (BitmapFormat TopToBottom PxRGBA)
+                                fractalImgBytes = pack $ createRGBA iterList auraPalette black
                               in
-                                pictures[rectangleSolid ((fromIntegral (read xres))+10) ((fromIntegral (read yres))+10),bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) (BitmapFormat TopToBottom PxRGBA) (pack (createRGBA (iterationList ((fromIntegral (read xres)), (fromIntegral (read yres))) (x, y) zoomer iter set ((read exp) :+ 0)) (cap (cycleGrad [(255,255,255,255),(255,0,0,255),(255,255,0,255),(0,255,0,255),(0,255,255,255),(0,0,255,255),(255,0,255,255)] 8) (0,0,0,255) iter))) True]
+                                pictures[border,bitmapOfByteString (fromIntegral (read xres)) (fromIntegral (read yres)) format fractalImgBytes True]
 
 window :: Display
 window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
@@ -258,8 +302,8 @@ window = InWindow "Epic Insane Gamer Window" (700, 700) (10, 10)
 handlekeys :: Event -> Settings -> Settings
 handlekeys (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
   let
-      x= show(realPart(coordToComp (x',y') ((read x''),(read y'')) ((fromIntegral (read xres)),(fromIntegral (read yres))) (read zoom)))
-      y= show(imagPart(coordToComp (x',y') ((read x''),(read y'')) ((fromIntegral (read xres)),(fromIntegral (read yres))) (read zoom)))
+      x= show(realPart(coordToComp (x',y') (((fromIntegral (read xres)),(fromIntegral (read yres))), ((read x'') :+ (read y'')), (read zoom))))
+      y= show(imagPart(coordToComp (x',y') (((fromIntegral (read xres)),(fromIntegral (read yres))), ((read x'') :+ (read y'')), (read zoom))))
     in
     if(r && (but == LeftButton || but == RightButton))
       then
@@ -324,7 +368,7 @@ main :: IO()
 main = play window white 1 initialSettings (picture) (handlekeys) (const id)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+{-
 test1 = TestCase $ assertEqual "mandelSet (-1.75 + 0.05i)" (1.31 :+ (-0.125)) (mandelSet ((-1.75) :+ 0.05) ((-1.75) :+ 0.05) 2)
 test2 = TestCase $ assertEqual "iterationCheck 0 127" 127 (iterationCheck 0 127 "mandelSet" 2)
 test3 = TestCase $ assertEqual "iterationCheck ((-0.56) :+ 0.893333) 51" 3 (iterationCheck ((-0.56) :+ 0.893333) 51 "mandelSet" 2)
@@ -340,3 +384,4 @@ test12 = TestCase $ assertEqual "gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 
 
 
 runTests = runTestTT $ TestList [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12]
+-}
