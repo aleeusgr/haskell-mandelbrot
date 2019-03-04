@@ -58,4 +58,4 @@ initialSettings :: Settings
 initialSettings = ("100","0","0", "0.5", 0, False, "250", "250","2","mandelbrotset")
 
 main :: IO()
-main = play window white 1 initialSettings (picture) (handlekeys) (const id)
+main = play window white 1 initialSettings (picture) (handleInput) (const id)
