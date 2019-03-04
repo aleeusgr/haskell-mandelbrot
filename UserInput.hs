@@ -1,7 +1,7 @@
 module UserInput (
   Settings,
   readSet,
-  handlekeys,
+  handleInput,
   erase,
   addChar) where
 
@@ -14,7 +14,7 @@ import Fractals
 import Data.Complex
 
 {- All the settings that can be altered by the user is stored here.
-   First element is how max iterations used in iteration list. Second element is the x-coordinate that is center of screen.
+   First element is the amount of iterations it takes before we decide any given pixel does not tend towards infinity. Second element is the x-coordinate that is center of screen.
    Third argument is y-coordinate center on screen. Forth element is the zoom factor. Fifth element is the active menu feild counted from top to top to bottom
    sixth element is what mode is currently in, False is Menu mode and True is fractal mode. Seventh is width of fractal. Eight is Height of fractal.
    Ninth is the exponent used to generate the fractal and tenth is the type of fractal.
@@ -35,7 +35,7 @@ readSet "tricornSet" = tricornSet
 readSet "juliaSet" = juliaSet
 readSet _ = mandelSet
 
-{-handlekeys event settigns@(it,x,y,zoom,c,r,xres,yres,exp,set)
+{-handleInput event settigns@(it,x,y,zoom,c,r,xres,yres,exp,set)
    DESCRIPTION: handles any and all user input from the user including mouseclicks, any letter/number button press and the two specialkeys KeyUp and KeyDown
    PRE: The sting varibles in x, y, zoom, xres and yres need to be properly formatted numbers that can be run through the function read
    RETURNS:
@@ -57,8 +57,8 @@ readSet _ = mandelSet
             7. handlekeys (EventKey (SpecialKey KeyEnter) Down (Modifiers Up Up Up) (0,0)) ("255","1","0","0.5",6,False,"100","100","2","mandel") -> ("255","1","0","0.5",6,True,"100","100","2","mandel")
             8. handlekeys (EventKey (MouseButton LeftButton) Down (Modifiers Up Up Up) (-10,-50)) ("255","0","0","0.5",6,True,"100","100","2","mandel")->("255","-0.4","-2.0","0.75",6.0,True,"100","100","2","mandel")
 -}
-handlekeys :: Event -> Settings -> Settings
-handlekeys (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
+handleInput :: Event -> Settings -> Settings
+handleInput (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set) =
   let
       x= show(realPart(coordToComp (x',y') (((fromIntegral (read xres)),(fromIntegral (read yres))), ((read x'') :+ (read y'')), (read zoom))))
       y= show(imagPart(coordToComp (x',y') (((fromIntegral (read xres)),(fromIntegral (read yres))), ((read x'') :+ (read y'')), (read zoom))))
@@ -69,16 +69,16 @@ handlekeys (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,
           then (it, x, y, show((read zoom)*1.5), c, r,xres,yres,exp,set)
           else (it, x, y, show((read zoom)*0.75), c, r,xres,yres,exp,set))
     else current
-handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres,exp,set) else current
-handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) = if(c < 7) then (it,x,y,z,c+1,r,xres,yres,exp,set) else current
-handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres,exp,set) = (it,x,y,z,c,r==False,xres,yres,exp,set)
-handlekeys (EventKey (Char k) Down _ _) current@(_,_,_,_,c,r,_,_,_,_)
+handleInput (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres,exp,set) else current
+handleInput (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) = if(c < 7) then (it,x,y,z,c+1,r,xres,yres,exp,set) else current
+handleInput (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres,exp,set) = (it,x,y,z,c,r==False,xres,yres,exp,set)
+handleInput (EventKey (Char k) Down _ _) current@(_,_,_,_,c,r,_,_,_,_)
   | r == True = current
   | k == '\b' = erase current
   | c == 6 = addChar current k
   | isDigit k == False && k /= '.' && k /= '-' = current
   | otherwise = addChar current k
-handlekeys _ current = current
+handleInput _ current = current
 
 {- erase Settings@(it,x,y,z,c,r,xres,yres,exp,set)
   DESCRIPTION: Removes the last letter from the currently highlighted feild in menu
