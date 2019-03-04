@@ -1,7 +1,7 @@
 module UserInput (
   Settings,
   readSet,
-  handlekeys,
+  handleInput,
   erase,
   addChar) where
 
