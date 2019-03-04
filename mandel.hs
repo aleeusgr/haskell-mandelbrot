@@ -26,7 +26,7 @@ type Settings = (String, String, String,String, Float, Bool, String, String,Stri
  - res represents the resolution of the view in pixels. cent represents the number that the view is centered on.
  - zm represents the zoom factor, i.e. how much the view is zoomed in. For example, zoom factor of 1 gives a view that spans 2 length
  - units in the complex number plane, while a zoom factor of 4 gives a view that spans 0.5 length units.
- - INVARIANT: No element of res is 0. zm /= 0.
+ - INVARIANT: No element of res is less than 1. zm /= 0.
  -}
 type View a = ((Int, Int), Complex a, a)
 
@@ -132,7 +132,7 @@ iterationList (r@(rx, ry), cent, zm) maxIt func exp =
  - DESCRIPTION: Gets a list of all coordinates in a Gloss display.
  - PRE: Al elements of res are greater than 0.
  - RETURNS: A list of all coordinates in a Gloss display of dimensions res. List order is equivalent to traversing the display left to right, top to bottom.
- - EXAMPLES: coordList (3, 3) = [(-1.0, 1.0), (0.0, 1.0), (1.0, 1.0), (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (-1.0, -1.0), (0.0, -1.0), (1.0, -1.0)]
+ - EXAMPLES: coordList (3, 3) -> [(-1.0, 1.0), (0.0, 1.0), (1.0, 1.0), (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (-1.0, -1.0), (0.0, -1.0), (1.0, -1.0)]
  -}
 coordList :: RealFloat a => (Int, Int) -> [(a, a)]
 coordList res = coordListAux res (0, 0)
@@ -366,20 +366,19 @@ main :: IO()
 main = play window white 1 initialSettings (picture) (handlekeys) (const id)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-{-
-test1 = TestCase $ assertEqual "mandelSet (-1.75 + 0.05i)" (1.31 :+ (-0.125)) (mandelSet ((-1.75) :+ 0.05) ((-1.75) :+ 0.05) 2)
-test2 = TestCase $ assertEqual "iterationCheck 0 127" 127 (iterationCheck 0 127 "mandelSet" 2)
-test3 = TestCase $ assertEqual "iterationCheck ((-0.56) :+ 0.893333) 51" 3 (iterationCheck ((-0.56) :+ 0.893333) 51 "mandelSet" 2)
-test4 = TestCase $ assertEqual "coordToComp (20,20) (0,0) (50,50) 0.5" (1.6 :+ 1.6) (coordToComp (20,20) (0,0) (50,50) 0.5)
-test5 = TestCase $ assertEqual "cap [1,2..5] 6 3" [1,2,3,6] (cap [1,2,3,4,5] 6 3)
-test6 = TestCase $ assertEqual "cap [1,2,3] 6 0" [6] (cap [1,2,3] 6 0)
-test7 = TestCase $ assertEqual "stepTo 1 7 3" 4 (stepTo 1 7 3)
-test8 = TestCase $ assertEqual "stepTo 7 2 4" 3 (stepTo 7 2 4)
-test9 = TestCase $ assertEqual "stepTo 1 2 30" 2 (stepTo 1 2 30)
-test10 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (0,1,2,255) 1" [(0,0,0,255), (0,1,1,255)] (twoCGradient (0,0,0,255) (0,1,2,255) 1)
-test11 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (0,1,2,255) 2" [(0,0,0,255), (2,2,2,255), (4,4,4,255)] (twoCGradient (0,0,0,255) (6,6,6,255) 2)
-test12 = TestCase $ assertEqual "gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2" [(0,0,0,255),(1,2,2,255),(1,2,3,255),(3,4,4,255),(5,5,4,255)] (gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2)
+
+test1 = TestCase $ assertEqual "No diverge" Nothing (iterationCheck 0 127 mandelSet 2)
+test2 = TestCase $ assertEqual "Diverge after 3" (Just 3) (iterationCheck ((-0.56) :+ 0.893333) 51 mandelSet 2)
+test3 = TestCase $ assertEqual "coordToComp top right corner" (2.0 :+ 2.0) (coordToComp (25, 25) ((50, 50), (0 :+ 0), 0.5))
+test4 = TestCase $ assertEqual "coordToComp bottom left corner" ((-2.0) :+ (-2.0)) (coordToComp ((-25), (-25)) ((50, 50), (0 :+ 0), 0.5))
+test5 = TestCase $ assertEqual "coordToComp center" (0.0 :+ 0.0) (coordToComp (0, 0) ((50, 50), (0 :+ 0), 0.5))
+test6 = TestCase $ assertEqual "coordToComp displacement" (1.5 :+ 2.0) (coordToComp (5, 5) ((20, 20), (1 :+ 1.5), 1))
+test7 = TestCase $ assertEqual "stepTo positive" 4 (stepTo 1 7 3)
+test8 = TestCase $ assertEqual "stepTo negative" 3 (stepTo 7 2 4)
+test9 = TestCase $ assertEqual "stepTo no overshoot" 2 (stepTo 1 2 30)
+test10 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (0,1,2,255) 1" [(0,0,0,255), (0,1,1,255), (0,1,2,255)] (twoCGradient (0,0,0,255) (0,1,2,255) 1)
+test11 = TestCase $ assertEqual "twoCGradient (0,0,0,255) (6,6,6,255) 2" [(0,0,0,255), (2,2,2,255), (4,4,4,255), (6,6,6,255)] (twoCGradient (0,0,0,255) (6,6,6,255) 2)
+test12 = TestCase $ assertEqual "gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2" [(0,0,0,255),(1,2,2,255),(1,2,3,255),(3,4,4,255),(5,5,4,255),(6,5,4,255)] (gradient [(0,0,0,255),(1,2,3,255),(6,5,4,255)] 2)
 
 
 runTests = runTestTT $ TestList [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12]
--}
