@@ -12,7 +12,7 @@ import Test.HUnit
 type Word8Color = (Word8,Word8,Word8,Word8)
 
 {- All the settings that can be altered by the user is stored here.
-   First element is how max iterations used in iteration list. Second element is the x-coordinate that is center of screen.
+   First element is the amount of iterations it takes before we decide any given pixel does not tend towards infinity. Second element is the x-coordinate that is center of screen.
    Third argument is y-coordinate center on screen. Forth element is the zoom factor. Fifth element is the active menu feild counted from top to top to bottom
    sixth element is what mode is currently in, False is Menu mode and True is fractal mode. Seventh is width of fractal. Eight is Height of fractal.
    Ninth is the exponent used to generate the fractal and tenth is the type of fractal.
@@ -264,7 +264,7 @@ picture (it, xcord, ycord, zoom,c,r,xres,yres,exp,set)
                                 violet = (255, 0, 255, 255)
                                 black = (0, 0, 0, 255)
                                 auraPalette = cycleGrad [white, red, yellow, green, cyan, blue, violet] 8
-                                border = rectangleSolid (fromIntegral (read xres) + 10) (fromIntegral (read xres) + 10)
+                                border = rectangleSolid (fromIntegral (read xres) + 10) (fromIntegral (read yres) + 10)
                                 view = (((fromIntegral $ read xres), (fromIntegral $ read yres)), (x :+ y), zoomer)
                                 iterList = iterationList view iter (readSet set) ((read exp) :+ 0)
                                 format = (BitmapFormat TopToBottom PxRGBA)
@@ -312,7 +312,7 @@ handlekeys (EventKey (MouseButton but) Down _ (x',y')) current@(it,x'',y'',zoom,
 handlekeys (EventKey (SpecialKey KeyUp) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) =if(c > 0) then (it,x,y,z,c-1,r,xres,yres,exp,set) else current
 handlekeys (EventKey (SpecialKey KeyDown) Down _ _)  current@(it,x,y,z,c,r,xres,yres,exp,set) = if(c < 7) then (it,x,y,z,c+1,r,xres,yres,exp,set) else current
 handlekeys (EventKey (SpecialKey KeyEnter) Down _ _) (it,x,y,z,c,r,xres,yres,exp,set) = (it,x,y,z,c,r==False,xres,yres,exp,set)
-handlekeys (EventKey (Char k) Down _ _) current@(it,x'',y'',zoom,c,r,xres,yres,exp,set)
+handlekeys (EventKey (Char k) Down _ _) current@(_,_,_,_,c,r,_,_,_,_)
   | r == True = current
   | k == '\b' = erase current
   | c == 6 = addChar current k
