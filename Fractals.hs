@@ -54,10 +54,10 @@ tricornSet z c e = (conjugate z) ** e + c
    EXAMPLES: juliaSet (1 :+ (-1)) ((-1) :+ 1) 2 -> 0.279 :+ (-2.0)
 -}
 juliaSet :: RealFloat a => Complex a -> Complex a -> Complex a -> Complex a
-juliaSet z _ e = z ** e + 0.279
+juliaSet z _ e = z ** e + ((-1.1876881) :+ (-0.3028384))
 
 {- iterationCheck z maxIt func exp
-   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0.
+   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0, if at all.
    PRE: maxIt > 0
    RETURNS: Just the number of iterations it takes for z to begin diverging from 0 when iterated over the function func with exponent exp. If z does not diverge after
      maxIt iterations then Nothing is returned.
@@ -67,7 +67,7 @@ iterationCheck :: RealFloat a => Complex a -> Int -> (Complex a -> Complex a -> 
 iterationCheck z maxIt func exp = iterationCheckAux z maxIt func exp 0 z
 
 {- iterationCheckAux z maxIt func exp currIt c 
-   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0
+   DESCRIPTION: Calculates how many iterations of a function it takes for a complex number to begin diverging from 0, if at all.
    PRE: maxIt > 0
    RETURNS: Just the number of iterations it takes for z to begin diverging from 0, when iterated over the function func with exponent exp and constant value c. It is
    assumed that currIt iterations have already been applied to z. If z does not diverge after maxIt iterations then Nothing is returned.
